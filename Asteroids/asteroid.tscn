@@ -1,0 +1,9 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Asteroids/asteroid.gd" id="1_ast"]
+
+[node name="Asteroid" type="RigidBody2D"]
+gravity_scale = 0.0
+linear_damp_mode = 1
+angular_damp_mode = 1
+script = ExtResource("1_ast")

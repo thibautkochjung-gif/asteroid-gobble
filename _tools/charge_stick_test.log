@@ -1,0 +1,56 @@
+
+== rock 20 px away
+  placed Asteroid2: surface 20.0 px from the tip
+  charge: STUCK, age 5.0 s
+  PASS rock 20 px away: charge stuck
+
+== rock 100 px away
+  placed Asteroid2: surface 100.0 px from the tip
+  charge: STUCK, age 5.0 s
+  PASS rock 100 px away: charge stuck
+
+== rock 170 px away
+  placed Asteroid2: surface 170.0 px from the tip
+  charge: STUCK, age 5.0 s
+  PASS rock 170 px away: charge stuck
+
+== rock 220 px away
+  placed Asteroid2: surface 220.0 px from the tip
+  charge: STUCK, age 5.0 s
+  PASS rock 220 px away: charge stuck
+
+== rock 300 px away
+  placed Asteroid2: surface 300.0 px from the tip
+  charge: STUCK, age 5.0 s
+  PASS rock 300 px away: charge stuck
+
+== rock 60 px away, spinning 1 rad/s
+  placed Asteroid2: surface 60.0 px from the tip
+  charge: STUCK, age 5.0 s
+  PASS rock 60 px away, spinning 1 rad/s: charge stuck
+
+== rock 60 px away, ship moving sideways 40 px/s
+  placed Asteroid2: surface 60.0 px from the tip
+  charge: STUCK, age 5.0 s
+  PASS rock 60 px away, ship moving sideways 40 px/s: charge stuck
+
+== rock welded by the tether
+  placed Asteroid2: surface 15.0 px from the tip
+  placed Asteroid2: surface 10.0 px from the tip
+  welded: true
+  rock from rack tip: 31.2 px
+  charge: STUCK, age 5.0 s
+  PASS rock welded by the tether: charge stuck
+    +0.05 s chunk 27 cells: 26.0 px/s, heading toward the ship 0.75 (1 = straight at it), 82 px from it
+    +0.05 s chunk 26 cells: 34.5 px/s, heading toward the ship 0.11 (1 = straight at it), 109 px from it
+    +0.05 s chunk 5 cells: 25.9 px/s, heading toward the ship 0.53 (1 = straight at it), 92 px from it
+    +0.30 s chunk 27 cells: 25.4 px/s, heading toward the ship 0.70 (1 = straight at it), 76 px from it
+    +0.30 s chunk 26 cells: 35.1 px/s, heading toward the ship 0.09 (1 = straight at it), 108 px from it
+    +0.30 s chunk 5 cells: 24.0 px/s, heading toward the ship 0.02 (1 = straight at it), 91 px from it
+    +1.00 s chunk 27 cells: 25.4 px/s, heading toward the ship 0.45 (1 = straight at it), 60 px from it
+    +1.00 s chunk 26 cells: 34.4 px/s, heading toward the ship -0.21 (1 = straight at it), 110 px from it
+    +1.00 s chunk 5 cells: 28.5 px/s, heading toward the ship -0.38 (1 = straight at it), 97 px from it
+  detonated on the welded rock: 3 chunks, 2 still flying off after 2 s, ship 0.3 px/s
+  FAIL chunks fly off a welded rock
+
+DONE: 8 checks passed, 1 failed

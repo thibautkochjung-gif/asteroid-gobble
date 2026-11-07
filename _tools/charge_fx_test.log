@@ -1,0 +1,15 @@
+  placed Asteroid2: surface 40.0 px from the tip
+planted 1, camera zoom (1.0, 1.0)
+  frame 0: delta 0.130 s, trauma 0.58, offset (0.0, 0.0), noise 0.28
+  frame 1: delta 0.057 s, trauma 0.54, offset (-11.79928, 8.348314), noise -0.25
+  frame 2: delta 0.141 s, trauma 0.50, offset (0.47276, 6.985281), noise 0.01
+  frame 3: delta 0.013 s, trauma 0.46, offset (-5.042688, 16.31069), noise -0.15
+  frame 4: delta 0.009 s, trauma 0.44, offset (11.31779, 5.123263), noise 0.36
+  frame 5: delta 0.017 s, trauma 0.43, offset (6.481685, -11.40563), noise 0.22
+  frame 6: delta 0.011 s, trauma 0.41, offset (-1.210275, 3.590719), noise -0.04
+  frame 7: delta 0.139 s, trauma 0.40, offset (4.78598, -5.232911), noise 0.19
+  frame 8: delta 0.033 s, trauma 0.36, offset (1.631283, 0.045522), noise 0.08
+  frame 9: delta 0.033 s, trauma 0.32, offset (4.004146, 0.988238), noise 0.24
+  frame 10: delta 0.017 s, trauma 0.28, offset (3.726172, -1.96224), noise 0.30
+  frame 11: delta 0.017 s, trauma 0.26, offset (-3.461972, 4.019245), noise -0.32
+camera trauma after 1 s: 0.00, biggest shake offset 17.1 px

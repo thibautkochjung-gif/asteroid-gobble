@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Ship/Modules/fuel_tank_room.gd" id="1_script"]
+
+[node name="FuelTankRoom" type="Node2D"]
+script = ExtResource("1_script")
+room_type = 2

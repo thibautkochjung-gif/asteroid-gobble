@@ -1,0 +1,193 @@
+[gd_scene format=3]
+
+[ext_resource type="Shader" path="res://Ship/FX/thruster_flame.gdshader" id="1_shader"]
+[ext_resource type="Script" path="res://Ship/FX/thruster_fx.gd" id="2_script"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_main"]
+frequency = 0.04
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_main"]
+width = 140
+height = 56
+seamless = true
+noise = SubResource("FastNoiseLite_main")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_main"]
+resource_local_to_scene = true
+shader = ExtResource("1_shader")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 0.97, 0.85, 1)
+shader_parameter/mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/brightness = 1.3
+shader_parameter/cold_size = 0.55
+shader_parameter/hot_mid_color = Color(1, 0.88, 0.8, 1)
+shader_parameter/hot_outer_color = Color(1, 0.4, 0.3, 1)
+shader_parameter/nozzle_width = 0.32
+shader_parameter/flare = 2.7
+shader_parameter/swell_end = 0.35
+shader_parameter/swell_round = 2.0
+shader_parameter/taper = 0.8
+shader_parameter/min_length = 0.3
+shader_parameter/flicker = 0.12
+shader_parameter/flicker_speed = 20.0
+shader_parameter/scroll_speed = 2.0
+shader_parameter/distortion = 0.35
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_add"]
+blend_mode = 1
+
+[sub_resource type="Gradient" id="Gradient_smoke"]
+offsets = PackedFloat32Array(0, 0.15, 1)
+colors = PackedColorArray(0.75, 0.72, 0.7, 0, 0.6, 0.58, 0.56, 0.45, 0.4, 0.4, 0.42, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_smoke"]
+gradient = SubResource("Gradient_smoke")
+
+[sub_resource type="Curve" id="Curve_smoke_size"]
+_data = [Vector2(0, 0.35), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_smoke_size"]
+curve = SubResource("Curve_smoke_size")
+
+[sub_resource type="ParticleProcessMaterial" id="Process_smoke"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 4.0
+lifetime_randomness = 0.4
+inherit_velocity_ratio = 1.0
+direction = Vector3(1, 0, 0)
+spread = 12.0
+initial_velocity_min = 80.0
+initial_velocity_max = 140.0
+gravity = Vector3(0, 0, 0)
+damping_min = 40.0
+damping_max = 70.0
+scale_min = 6.0
+scale_max = 10.0
+scale_curve = SubResource("CurveTexture_smoke_size")
+color_ramp = SubResource("GradientTexture1D_smoke")
+
+[sub_resource type="Gradient" id="Gradient_sparks"]
+offsets = PackedFloat32Array(0, 0.4, 1)
+colors = PackedColorArray(1, 1, 0.85, 1, 1, 0.55, 0.15, 1, 0.85, 0.12, 0.04, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_sparks"]
+gradient = SubResource("Gradient_sparks")
+
+[sub_resource type="ParticleProcessMaterial" id="Process_ignition_sparks"]
+particle_flag_disable_z = true
+lifetime_randomness = 0.5
+inherit_velocity_ratio = 1.0
+direction = Vector3(1, 0, 0)
+spread = 35.0
+initial_velocity_min = 150.0
+initial_velocity_max = 320.0
+gravity = Vector3(0, 0, 0)
+damping_min = 150.0
+damping_max = 300.0
+scale_min = 1.0
+scale_max = 2.0
+color_ramp = SubResource("GradientTexture1D_sparks")
+
+[sub_resource type="Gradient" id="Gradient_embers"]
+offsets = PackedFloat32Array(0, 0.4, 1)
+colors = PackedColorArray(1, 0.95, 0.75, 1, 1, 0.55, 0.15, 1, 0.85, 0.15, 0.05, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_embers"]
+gradient = SubResource("Gradient_embers")
+
+[sub_resource type="ParticleProcessMaterial" id="Process_embers"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 3.0
+lifetime_randomness = 0.4
+inherit_velocity_ratio = 1.0
+direction = Vector3(1, 0, 0)
+spread = 8.0
+initial_velocity_min = 220.0
+initial_velocity_max = 320.0
+gravity = Vector3(0, 0, 0)
+damping_min = 20.0
+damping_max = 60.0
+scale_min = 1.0
+scale_max = 2.0
+color_ramp = SubResource("GradientTexture1D_embers")
+sub_emitter_mode = 1
+sub_emitter_frequency = 30.0
+
+[sub_resource type="Gradient" id="Gradient_trail_dots"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 0.6, 0.2, 0.8, 0.7, 0.12, 0.04, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_trail_dots"]
+gradient = SubResource("Gradient_trail_dots")
+
+[sub_resource type="ParticleProcessMaterial" id="Process_trail_dots"]
+particle_flag_disable_z = true
+lifetime_randomness = 0.3
+spread = 180.0
+initial_velocity_min = 0.0
+initial_velocity_max = 6.0
+gravity = Vector3(0, 0, 0)
+color_ramp = SubResource("GradientTexture1D_trail_dots")
+
+[node name="MainThrusterFX" type="Sprite2D" node_paths=PackedStringArray("trail_emitters", "ignition_emitters")]
+texture_repeat = 2
+material = SubResource("ShaderMaterial_main")
+texture = SubResource("NoiseTexture2D_main")
+centered = false
+offset = Vector2(0, -28)
+script = ExtResource("2_script")
+ramp_speed = 6.0
+burn_up_time = 3.0
+burn_down_time = 1.5
+trail_emitters = [NodePath("Smoke"), NodePath("Embers")]
+ignition_emitters = [NodePath("IgnitionSparks")]
+
+[node name="Smoke" type="GPUParticles2D" parent="."]
+show_behind_parent = true
+position = Vector2(20, 0)
+emitting = false
+amount = 48
+lifetime = 1.6
+fixed_fps = 0
+visibility_rect = Rect2(-400, -400, 800, 800)
+local_coords = false
+process_material = SubResource("Process_smoke")
+
+[node name="IgnitionSparks" type="GPUParticles2D" parent="."]
+material = SubResource("CanvasItemMaterial_add")
+emitting = false
+amount = 24
+lifetime = 0.5
+one_shot = true
+explosiveness = 0.95
+fixed_fps = 0
+visibility_rect = Rect2(-400, -400, 800, 800)
+local_coords = false
+process_material = SubResource("Process_ignition_sparks")
+
+[node name="Embers" type="GPUParticles2D" parent="."]
+material = SubResource("CanvasItemMaterial_add")
+emitting = false
+amount = 10
+sub_emitter = NodePath("../TrailDots")
+lifetime = 0.9
+fixed_fps = 0
+visibility_rect = Rect2(-400, -400, 800, 800)
+local_coords = false
+process_material = SubResource("Process_embers")
+
+[node name="TrailDots" type="GPUParticles2D" parent="."]
+material = SubResource("CanvasItemMaterial_add")
+emitting = false
+amount = 300
+lifetime = 0.5
+fixed_fps = 0
+visibility_rect = Rect2(-400, -400, 800, 800)
+local_coords = false
+process_material = SubResource("Process_trail_dots")

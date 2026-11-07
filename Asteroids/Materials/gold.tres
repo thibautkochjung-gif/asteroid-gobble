@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CellMaterial" format=3]
+
+[ext_resource type="Script" path="res://Asteroids/Materials/cell_material.gd" id="1_mat"]
+
+[resource]
+script = ExtResource("1_mat")
+display_name = "Gold"
+color = Color(0.96, 0.76, 0.2, 1)
+hardness = 2.0
+is_ore = true
+value = 60.0
+spawn_weight = 12.0
+dark_chance = 0.25
+light_chance = 0.15
+has_facets = false

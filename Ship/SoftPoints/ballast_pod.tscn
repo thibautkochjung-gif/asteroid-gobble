@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Ship/SoftPoints/ballast_pod.gd" id="1_script"]
+
+[node name="BallastPod" type="Node2D"]
+script = ExtResource("1_script")

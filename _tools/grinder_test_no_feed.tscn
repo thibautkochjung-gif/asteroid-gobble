@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://_tools/grinder_test.gd" id="1_test"]
+
+[node name="GrinderTestNoFeed" type="Node"]
+script = ExtResource("1_test")
+log_name = "grinder_test_no_feed"
+feed_acceleration = 0.0

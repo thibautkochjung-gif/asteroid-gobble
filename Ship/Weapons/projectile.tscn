@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Ship/Weapons/projectile.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Ship/Sprites/projectile.png" id="2_sprite"]
+
+[node name="Projectile" type="Node2D"]
+z_index = 1
+script = ExtResource("1_script")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("2_sprite")

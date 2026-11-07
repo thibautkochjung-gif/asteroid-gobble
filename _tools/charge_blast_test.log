@@ -1,0 +1,76 @@
+
+== 1 charge(s) on Asteroid2
+  planted 1, rock 1766 cells, mass 176.6
+  detonation + first frame: 4126.9 ms
+  new bodies: 24, sizes [1, 1, 1, 1, 1, 1, 2, 2, 3, 5, 6, 7, 22, 24, 26, 27, 32, 34, 35, 37, 42, 43, 48, 49]
+  after 3 more frames: rock 7.0 px/s (1279 cells)
+  after 30 more frames: rock 7.0 px/s (1279 cells)
+    chunk 27 cells: 45.1 px/s, 51.8 px/s relative to rock (50.3 px/s away from it), gap 153.0 px
+    chunk 26 cells: 34.8 px/s, 40.2 px/s relative to rock (39.4 px/s away from it), gap 130.9 px
+    chunk 34 cells: 37.0 px/s, 43.9 px/s relative to rock (43.8 px/s away from it), gap 155.5 px
+    chunk 48 cells: 8.5 px/s, 15.5 px/s relative to rock (15.5 px/s away from it), gap 36.6 px
+    chunk 42 cells: 43.3 px/s, 50.4 px/s relative to rock (50.0 px/s away from it), gap 191.8 px
+    chunk 7 cells: 34.7 px/s, 40.8 px/s relative to rock (40.1 px/s away from it), gap 145.0 px
+    chunk 24 cells: 25.7 px/s, 32.5 px/s relative to rock (32.5 px/s away from it), gap 96.2 px
+    chunk 43 cells: 14.5 px/s, 20.1 px/s relative to rock (19.6 px/s away from it), gap 33.1 px
+    chunk 49 cells: 18.8 px/s, 25.8 px/s relative to rock (25.1 px/s away from it), gap 109.8 px
+    chunk 32 cells: 14.5 px/s, 20.0 px/s relative to rock (19.6 px/s away from it), gap 43.6 px
+    chunk 5 cells: 34.5 px/s, 41.2 px/s relative to rock (40.4 px/s away from it), gap 174.2 px
+    chunk 35 cells: 20.7 px/s, 26.1 px/s relative to rock (25.9 px/s away from it), gap 74.7 px
+    chunk 37 cells: 6.5 px/s, 1.4 px/s relative to rock (0.3 px/s away from it), gap 32.3 px
+    chunk 22 cells: 20.1 px/s, 26.0 px/s relative to rock (24.6 px/s away from it), gap 59.9 px
+    chunk 6 cells: 6.8 px/s, 0.6 px/s relative to rock (0.1 px/s away from it), gap 12.9 px
+  after 90 more frames: rock 7.0 px/s (1279 cells)
+
+== 2 charge(s) on Asteroid2
+  planted 2, rock 1279 cells, mass 127.9
+  detonation + first frame: 60.7 ms
+  new bodies: 21, sizes [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 20, 26, 26, 27, 29, 34, 36, 38, 42, 49]
+  after 3 more frames: rock 10.8 px/s (907 cells)
+  after 30 more frames: rock 10.7 px/s (907 cells)
+    chunk 20 cells: 27.3 px/s, 34.5 px/s relative to rock (3.5 px/s away from it), gap 32.8 px
+    chunk 34 cells: 37.4 px/s, 47.8 px/s relative to rock (45.9 px/s away from it), gap 28.3 px
+    chunk 26 cells: 30.0 px/s, 37.9 px/s relative to rock (20.4 px/s away from it), gap 24.3 px
+    chunk 36 cells: 30.6 px/s, 41.2 px/s relative to rock (38.3 px/s away from it), gap 15.6 px
+    chunk 42 cells: 30.6 px/s, 41.2 px/s relative to rock (30.3 px/s away from it), gap 32.2 px
+    chunk 29 cells: 22.0 px/s, 32.6 px/s relative to rock (27.3 px/s away from it), gap 42.9 px
+    chunk 26 cells: 18.9 px/s, 29.4 px/s relative to rock (22.2 px/s away from it), gap 19.7 px
+    chunk 27 cells: 32.0 px/s, 41.4 px/s relative to rock (29.0 px/s away from it), gap 19.6 px
+    chunk 49 cells: 24.4 px/s, 35.1 px/s relative to rock (10.5 px/s away from it), gap 23.9 px
+    chunk 38 cells: 27.3 px/s, 35.9 px/s relative to rock (6.7 px/s away from it), gap 32.3 px
+  after 90 more frames: rock 9.1 px/s (907 cells)
+
+== 4 charge(s) on Asteroid2
+  planted 4, rock 907 cells, mass 90.7
+  detonation + first frame: 109.0 ms
+  new bodies: 38, sizes [1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 3, 5, 6, 7, 8, 12, 14, 23, 23, 23, 25, 25, 27, 27, 27, 30, 30, 31, 33, 35, 37, 42, 42, 43, 43, 46, 48, 49]
+  after 3 more frames: rock 89.2 px/s (35 cells)
+  after 30 more frames: rock 89.2 px/s (35 cells)
+    chunk 43 cells: 31.9 px/s, 119.2 px/s relative to rock (119.2 px/s away from it), gap 99.4 px
+    chunk 37 cells: 23.0 px/s, 101.4 px/s relative to rock (99.7 px/s away from it), gap 76.0 px
+    chunk 25 cells: 22.1 px/s, 110.6 px/s relative to rock (108.8 px/s away from it), gap 73.4 px
+    chunk 43 cells: 28.4 px/s, 116.6 px/s relative to rock (95.0 px/s away from it), gap 75.8 px
+    chunk 27 cells: 29.1 px/s, 115.8 px/s relative to rock (105.2 px/s away from it), gap 58.0 px
+    chunk 49 cells: 42.7 px/s, 108.8 px/s relative to rock (40.3 px/s away from it), gap 75.2 px
+    chunk 33 cells: 17.6 px/s, 83.4 px/s relative to rock (57.1 px/s away from it), gap 98.6 px
+    chunk 12 cells: 27.6 px/s, 113.1 px/s relative to rock (93.0 px/s away from it), gap 81.7 px
+    chunk 31 cells: 27.9 px/s, 116.9 px/s relative to rock (80.9 px/s away from it), gap 70.9 px
+    chunk 6 cells: 27.6 px/s, 116.7 px/s relative to rock (96.5 px/s away from it), gap 81.2 px
+    chunk 25 cells: 4.9 px/s, 86.1 px/s relative to rock (52.0 px/s away from it), gap 126.9 px
+    chunk 23 cells: 27.4 px/s, 116.5 px/s relative to rock (112.1 px/s away from it), gap 55.7 px
+    chunk 46 cells: 18.7 px/s, 91.3 px/s relative to rock (31.4 px/s away from it), gap 43.4 px
+    chunk 23 cells: 17.6 px/s, 75.9 px/s relative to rock (43.9 px/s away from it), gap 124.0 px
+    chunk 7 cells: 27.4 px/s, 116.3 px/s relative to rock (61.1 px/s away from it), gap 97.1 px
+    chunk 30 cells: 20.0 px/s, 104.0 px/s relative to rock (93.5 px/s away from it), gap 33.1 px
+    chunk 42 cells: 8.4 px/s, 82.1 px/s relative to rock (60.2 px/s away from it), gap 141.1 px
+    chunk 27 cells: 24.0 px/s, 111.2 px/s relative to rock (111.2 px/s away from it), gap 53.5 px
+    chunk 23 cells: 26.2 px/s, 82.3 px/s relative to rock (79.6 px/s away from it), gap 181.6 px
+    chunk 27 cells: 19.0 px/s, 82.9 px/s relative to rock (73.9 px/s away from it), gap 190.1 px
+    chunk 30 cells: 9.1 px/s, 80.3 px/s relative to rock (62.6 px/s away from it), gap 163.9 px
+    chunk 48 cells: 51.4 px/s, 81.3 px/s relative to rock (78.3 px/s away from it), gap 203.8 px
+    chunk 42 cells: 22.8 px/s, 68.7 px/s relative to rock (50.1 px/s away from it), gap 174.5 px
+    chunk 35 cells: 12.8 px/s, 77.2 px/s relative to rock (41.4 px/s away from it), gap 138.7 px
+    chunk 14 cells: 53.7 px/s, 68.2 px/s relative to rock (67.4 px/s away from it), gap 56.0 px
+    chunk 8 cells: 30.1 px/s, 59.1 px/s relative to rock (32.6 px/s away from it), gap 179.3 px
+    chunk 5 cells: 102.0 px/s, 18.2 px/s relative to rock (14.7 px/s away from it), gap 106.2 px
+  after 90 more frames: rock 89.2 px/s (35 cells)

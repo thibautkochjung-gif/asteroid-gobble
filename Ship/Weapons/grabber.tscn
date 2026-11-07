@@ -1,0 +1,67 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Ship/Weapons/grabber.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Ship/Sprites/drill_base.png" id="2_base"]
+[ext_resource type="Texture2D" path="res://Ship/Sprites/grabber_link.png" id="3_link"]
+[ext_resource type="Texture2D" path="res://Ship/Sprites/grabber_claw.png" id="4_head"]
+[ext_resource type="Texture2D" path="res://Ship/Sprites/drill_joint.png" id="5_joint"]
+[ext_resource type="Script" path="res://Ship/Weapons/robot_arm.gd" id="6_arm"]
+
+[node name="Grabber" type="Node2D"]
+z_index = 1
+script = ExtResource("1_script")
+
+[node name="Arm" type="Node2D" parent="."]
+script = ExtResource("6_arm")
+max_reach = 96.0
+rest_tip_distance = 84.0
+swing_speed_degrees = 60.0
+extend_speed = 40.0
+max_wrist_bend_degrees = 140.0
+wrist_speed_degrees = 153.0
+prefer_outer_elbow = true
+avoid_hull = false
+has_hitbox = false
+head_hitbox = PackedVector2Array(0, -6, 8, -6, 8, 6, 0, 6)
+
+[node name="UpperArm" type="Sprite2D" parent="Arm"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("3_link")
+centered = false
+offset = Vector2(0, -2.5)
+
+[node name="Forearm" type="Sprite2D" parent="Arm"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("3_link")
+centered = false
+offset = Vector2(0, -2.5)
+
+[node name="ElbowJoint" type="Sprite2D" parent="Arm"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("5_joint")
+
+[node name="WristJoint" type="Sprite2D" parent="Arm"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("5_joint")
+
+[node name="Head" type="Node2D" parent="Arm"]
+
+[node name="Sprite" type="Sprite2D" parent="Arm/Head"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("4_head")
+centered = false
+offset = Vector2(0, -3.5)
+hframes = 2
+
+[node name="Muzzle" type="Marker2D" parent="Arm/Head"]
+position = Vector2(28, 0)
+
+[node name="Base" type="Sprite2D" parent="Arm"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("2_base")

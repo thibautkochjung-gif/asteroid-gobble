@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CellMaterial" format=3]
+
+[ext_resource type="Script" path="res://Asteroids/Materials/cell_material.gd" id="1_mat"]
+
+[resource]
+script = ExtResource("1_mat")
+display_name = "Tough rock"
+color = Color(0.29, 0.275, 0.29, 1)
+hardness = 3.0
+is_ore = false
+value = 0.0
+spawn_weight = 0.0
+dark_chance = 0.05
+light_chance = 0.0
+has_facets = true

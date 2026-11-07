@@ -1,0 +1,98 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://UI/pause_menu.gd" id="1_script"]
+
+[node name="PauseMenu" type="CanvasLayer"]
+process_mode = 3
+layer = 10
+script = ExtResource("1_script")
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="RoomsHeader" type="Label" parent="Panel/Margin/VBox"]
+layout_mode = 2
+text = "Ship rooms"
+
+[node name="SlotList" type="VBoxContainer" parent="Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Warning" type="Label" parent="Panel/Margin/VBox"]
+modulate = Color(1, 0.75, 0.4, 1)
+layout_mode = 2
+text = "Swapping a room dumps whatever it holds."
+
+[node name="HardpointsHeader" type="Label" parent="Panel/Margin/VBox"]
+layout_mode = 2
+text = "Hardpoints"
+
+[node name="HardpointList" type="VBoxContainer" parent="Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SoftPointsHeader" type="Label" parent="Panel/Margin/VBox"]
+layout_mode = 2
+text = "Soft points (tap the key to use, hold for the second action)"
+
+[node name="SoftPointList" type="VBoxContainer" parent="Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusLabel" type="Label" parent="Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DebugButtons" type="HBoxContainer" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="RefuelButton" type="Button" parent="Panel/Margin/VBox/DebugButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Refuel & restock (debug)"
+
+[node name="EmptyCargoButton" type="Button" parent="Panel/Margin/VBox/DebugButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Empty cargo (debug)"
+
+[node name="ResumeButton" type="Button" parent="Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Resume (Esc)"

@@ -1,0 +1,29 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://do61begb3fk3l" path="res://Ship/Weapons/laser.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Ship/Sprites/laser_gun.png" id="2_sprite"]
+
+[node name="Laser" type="Node2D"]
+z_index = 1
+script = ExtResource("1_script")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("2_sprite")
+centered = false
+offset = Vector2(-2.5, -2.5)
+
+[node name="Muzzle" type="Marker2D" parent="."]
+position = Vector2(19, 0)
+
+[node name="Beam" type="Line2D" parent="Muzzle"]
+begin_cap_mode = 2
+end_cap_mode = 2
+antialiased = true
+
+[node name="FireTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="CooldownTimer" type="Timer" parent="."]
+one_shot = true

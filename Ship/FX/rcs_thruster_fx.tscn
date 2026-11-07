@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Shader" path="res://Ship/FX/thruster_flame.gdshader" id="1_shader"]
+[ext_resource type="Script" path="res://Ship/FX/thruster_fx.gd" id="2_script"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_rcs"]
+frequency = 0.1
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_rcs"]
+width = 28
+height = 20
+seamless = true
+noise = SubResource("FastNoiseLite_rcs")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rcs"]
+resource_local_to_scene = true
+shader = ExtResource("1_shader")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="Gradient" id="Gradient_dust"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.85, 0.9, 1, 0.7, 0.6, 0.65, 0.75, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_dust"]
+gradient = SubResource("Gradient_dust")
+
+[sub_resource type="ParticleProcessMaterial" id="Process_dust"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 1.5
+lifetime_randomness = 0.4
+inherit_velocity_ratio = 1.0
+direction = Vector3(1, 0, 0)
+spread = 14.0
+initial_velocity_min = 50.0
+initial_velocity_max = 90.0
+gravity = Vector3(0, 0, 0)
+damping_min = 30.0
+damping_max = 60.0
+color_ramp = SubResource("GradientTexture1D_dust")
+
+[node name="RcsThrusterFX" type="Sprite2D" node_paths=PackedStringArray("trail_emitters")]
+texture_repeat = 2
+material = SubResource("ShaderMaterial_rcs")
+texture = SubResource("NoiseTexture2D_rcs")
+centered = false
+offset = Vector2(0, -10)
+script = ExtResource("2_script")
+ramp_speed = 30.0
+trail_emitters = [NodePath("Dust")]
+
+[node name="Dust" type="GPUParticles2D" parent="."]
+position = Vector2(4, 0)
+emitting = false
+amount = 10
+lifetime = 0.5
+fixed_fps = 0
+visibility_rect = Rect2(-200, -200, 400, 400)
+local_coords = false
+process_material = SubResource("Process_dust")

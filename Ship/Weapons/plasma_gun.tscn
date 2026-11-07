@@ -1,0 +1,111 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Ship/Weapons/plasma_gun.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Ship/Sprites/laser_gun.png" id="2_sprite"]
+
+[sub_resource type="Gradient" id="Gradient_sparks"]
+offsets = PackedFloat32Array(0, 0.4, 1)
+colors = PackedColorArray(0.9, 0.97, 1, 1, 0.35, 0.65, 1, 1, 0.15, 0.3, 1, 0)
+
+[sub_resource type="Gradient" id="Gradient_flash"]
+offsets = PackedFloat32Array(0, 0.3, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0.5, 0.8, 1, 1, 0.2, 0.45, 1, 0)
+
+[sub_resource type="Gradient" id="Gradient_smoke"]
+offsets = PackedFloat32Array(0, 0.2, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.55, 1, 1, 1, 0)
+
+[sub_resource type="Curve" id="Curve_smoke_size"]
+_data = [Vector2(0, 0.4), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Gradient" id="Gradient_dust"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.8, 1, 1, 1, 0)
+
+[node name="PlasmaGun" type="Node2D"]
+z_index = 1
+script = ExtResource("1_script")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+modulate = Color(0.55, 0.75, 1, 1)
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("2_sprite")
+centered = false
+offset = Vector2(-2.5, -2.5)
+
+[node name="Muzzle" type="Marker2D" parent="."]
+position = Vector2(19, 0)
+
+[node name="Beam" type="Line2D" parent="Muzzle"]
+begin_cap_mode = 2
+end_cap_mode = 2
+antialiased = true
+
+[node name="Core" type="Line2D" parent="Muzzle/Beam"]
+begin_cap_mode = 2
+end_cap_mode = 2
+antialiased = true
+
+[node name="EngageFlash" type="CPUParticles2D" parent="Muzzle"]
+emitting = false
+amount = 16
+lifetime = 0.25
+one_shot = true
+explosiveness = 1.0
+spread = 70.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 50.0
+initial_velocity_max = 120.0
+damping_min = 200.0
+damping_max = 300.0
+scale_amount_min = 2.0
+scale_amount_max = 3.5
+color_ramp = SubResource("Gradient_flash")
+
+[node name="Sparks" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 20
+lifetime = 0.25
+local_coords = false
+spread = 60.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 40.0
+initial_velocity_max = 110.0
+damping_min = 100.0
+damping_max = 160.0
+scale_amount_min = 1.5
+scale_amount_max = 2.5
+color_ramp = SubResource("Gradient_sparks")
+
+[node name="Smoke" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 14
+lifetime = 1.2
+local_coords = false
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 8.0
+initial_velocity_max = 20.0
+damping_min = 4.0
+damping_max = 8.0
+scale_amount_min = 4.0
+scale_amount_max = 7.0
+scale_amount_curve = SubResource("Curve_smoke_size")
+color_ramp = SubResource("Gradient_smoke")
+
+[node name="Dust" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 18
+lifetime = 0.8
+local_coords = false
+spread = 75.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 20.0
+initial_velocity_max = 60.0
+damping_min = 25.0
+damping_max = 50.0
+scale_amount_min = 1.0
+scale_amount_max = 2.0
+color_ramp = SubResource("Gradient_dust")

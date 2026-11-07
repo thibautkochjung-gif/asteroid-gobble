@@ -1,0 +1,71 @@
+chunk of 72 cells placed. Too big: true
+   chunk centre in ship space: (100.0, 0.0)
+   ship moved 0.0 px from its start, velocity (0.0, 0.0)
+t=0s  hold=[72]  grinder=idle  smelter=0 cells  cargo=0.0
+   chunk centre in ship space: (97.8867, -0.000051)
+   ship moved 0.5 px from its start, velocity (0.000001, 0.0)
+t=2s  hold=[72]  grinder=grinding 39%  smelter=0 cells  cargo=0.0
+   chunk centre in ship space: (97.8867, -0.000051)
+   ship moved 0.5 px from its start, velocity (0.000002, 0.000001)
+t=4s  hold=[72]  grinder=grinding 79%  smelter=0 cells  cargo=0.0
+   4.50s P=(0.0, 0.0) ship m=24.0 v=(0.000002, 0.000001) | 72 cells m=7.2 v=(0.0, 0.0)
+   4.63s P=(0.0, 0.0) ship m=24.0 v=(0.000002, 0.000001) | 72 cells m=7.2 v=(0.0, 0.0)
+   4.70s P=(0.0, 0.0) ship m=24.0 v=(0.000002, 0.000001) | 72 cells m=7.2 v=(0.0, 0.0)
+   4.83s P=(0.0, 0.0) ship m=24.0 v=(0.000002, 0.000001) | 72 cells m=7.2 v=(0.0, 0.0)
+   4.90s P=(0.0, 0.0) ship m=24.0 v=(0.000002, 0.000001) | 72 cells m=7.2 v=(0.0, 0.0)
+   5.03s P=(0.0, 0.0) ship m=24.0 v=(0.000002, 0.000001) | 72 cells m=7.2 v=(0.0, 0.0)
+   5.10s P=(0.0, 0.0) ship m=24.0 v=(-0.391871, 0.000005) | 36 cells m=3.6 v=(0.0, 0.0), 36 cells m=3.6 v=(3.0, 0.0)
+   5.23s P=(0.0, 0.0) ship m=27.6 v=(0.130626, 0.000001) | 36 cells m=3.6 v=(-1.0, 0.0)
+   5.30s P=(0.0, 0.0) ship m=27.6 v=(0.391874, 0.000001) | 36 cells m=3.6 v=(-3.0, 0.0)
+   5.43s P=(0.0, 0.0) ship m=27.6 v=(0.914371, 0.000001) | 36 cells m=3.6 v=(-7.0, 0.0)
+   5.50s P=(0.0, 0.0) ship m=27.6 v=(1.175619, 0.000001) | 36 cells m=3.6 v=(-9.0, 0.0)
+   5.63s P=(0.0, 0.0) ship m=27.6 v=(1.698116, 0.000001) | 36 cells m=3.6 v=(-13.0, 0.0)
+   5.77s P=(0.0, 0.0) ship m=27.6 v=(2.220612, 0.000002) | 36 cells m=3.6 v=(-17.0, 0.0)
+   5.83s P=(0.0, 0.0) ship m=27.6 v=(2.48186, 0.000002) | 36 cells m=3.6 v=(-19.0, 0.0)
+   5.97s P=(0.0, 0.0) ship m=27.6 v=(3.004356, 0.000002) | 36 cells m=3.6 v=(-23.0, 0.0)
+   ship moved 1.9 px from its start, velocity (3.265604, 0.000002)
+t=6s  hold=[36]  grinder=idle  smelter=36 cells  cargo=0.0
+   6.03s P=(0.0, 0.0) ship m=27.6 v=(3.265604, 0.000002) | 36 cells m=3.6 v=(-25.0, 0.0)
+   6.17s P=(0.0, 0.0) ship m=27.6 v=(3.788101, 0.000002) | 36 cells m=3.6 v=(-29.0, 0.0)
+   6.23s P=(0.0, 0.0) ship m=27.6 v=(4.049349, 0.000002) | 36 cells m=3.6 v=(-31.0, 0.0)
+   6.37s P=(0.0, 0.0) ship m=27.6 v=(4.571845, 0.000002) | 36 cells m=3.6 v=(-35.0, 0.0)
+   6.43s P=(0.0, 0.0) ship m=27.6 v=(-0.000003, 0.000021) | 36 cells m=3.6 v=(0.0, 0.0)
+   6.57s P=(0.0, 0.0) ship m=27.6 v=(0.000002, -0.0) | 36 cells m=3.6 v=(0.0, 0.0)
+   6.63s P=(0.0, 0.0) ship m=27.6 v=(0.000002, -0.0) | 36 cells m=3.6 v=(0.0, 0.0)
+   6.77s P=(0.0, 0.0) ship m=27.6 v=(0.000002, -0.0) | 36 cells m=3.6 v=(0.0, 0.0)
+   6.83s P=(0.0, 0.0) ship m=27.6 v=(0.000002, -0.0) | 36 cells m=3.6 v=(0.0, 0.0)
+   6.97s P=(0.0, 0.0) ship m=27.6 v=(0.000002, -0.0) | 36 cells m=3.6 v=(0.0, 0.0)
+   ship moved 3.3 px from its start, velocity (0.000002, -0.00003)
+t=8s  hold=[36]  grinder=idle  smelter=35 cells  cargo=0.1
+   ship moved 3.3 px from its start, velocity (0.000002, -0.000031)
+t=10s  hold=[36]  grinder=idle  smelter=34 cells  cargo=0.2
+   ship moved 3.3 px from its start, velocity (0.000002, -0.000049)
+t=12s  hold=[36]  grinder=idle  smelter=32 cells  cargo=0.4
+   ship moved 3.3 px from its start, velocity (0.000002, 0.000261)
+t=14s  hold=[36]  grinder=idle  smelter=30 cells  cargo=0.6
+   ship moved 3.3 px from its start, velocity (0.000004, 0.000401)
+t=16s  hold=[36]  grinder=idle  smelter=29 cells  cargo=0.7
+   ship moved 3.3 px from its start, velocity (0.000003, 0.000332)
+t=18s  hold=[36]  grinder=idle  smelter=27 cells  cargo=0.9
+   ship moved 3.3 px from its start, velocity (0.000003, 0.000332)
+t=20s  hold=[36]  grinder=idle  smelter=26 cells  cargo=1.0
+   ship moved 3.3 px from its start, velocity (0.000004, 0.000371)
+t=22s  hold=[36]  grinder=idle  smelter=24 cells  cargo=1.2
+   ship moved 3.3 px from its start, velocity (0.000003, 0.000307)
+t=24s  hold=[36]  grinder=idle  smelter=22 cells  cargo=1.4
+   ship moved 3.3 px from its start, velocity (0.000003, 0.000128)
+t=26s  hold=[36]  grinder=idle  smelter=21 cells  cargo=1.5
+   ship moved 3.3 px from its start, velocity (0.000003, 0.000128)
+t=28s  hold=[36]  grinder=idle  smelter=19 cells  cargo=1.7
+   ship moved 3.3 px from its start, velocity (0.000003, 0.000129)
+t=30s  hold=[36]  grinder=idle  smelter=18 cells  cargo=1.8
+   ship moved 3.3 px from its start, velocity (0.000003, 0.000061)
+t=32s  hold=[36]  grinder=idle  smelter=16 cells  cargo=2.0
+   ship moved 3.3 px from its start, velocity (0.000003, 0.000061)
+t=34s  hold=[36]  grinder=idle  smelter=15 cells  cargo=2.1
+   ship moved 3.3 px from its start, velocity (0.000004, 0.000135)
+t=36s  hold=[36]  grinder=idle  smelter=13 cells  cargo=2.3
+   ship moved 3.3 px from its start, velocity (0.000004, 0.000134)
+t=38s  hold=[36]  grinder=idle  smelter=11 cells  cargo=2.5
+   ship moved 3.3 px from its start, velocity (0.000004, -0.000013)
+t=40s  hold=[]  grinder=idle  smelter=46 cells  cargo=2.6
