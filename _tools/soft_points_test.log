@@ -1,19 +1,19 @@
-start: mass 34.5, centre of mass (-19.02496, -1.973302)
+start: mass 35.5, centre of mass (-18.00902, -0.789622)
 
 == Layout
   mount 1 Left fore: Harpoon winch
   mount 2 Left aft: Drop tank
-  mount 3 Right fore: Tether
+  mount 3 Right fore: Rock bolter
   mount 4 Right aft: Beacon rack
   PASS 4 mounts
-  PASS soft point mass counted (ship 34.5)
+  PASS soft point mass counted (ship 35.5)
 
 == Drop tank
   drop tank 60.0 -> 59.0, rooms 79.2 -> 79.2
   PASS drop tank burned first
   [msg 2] Drop tank jettisoned
   PASS jettisoned as a prop
-  mass 34.5 -> 30.5
+  mass 35.5 -> 31.5
   PASS ship lighter after jettison
   [msg 2] Drop tank recovered
   PASS drop tank recovered by touching it
@@ -22,21 +22,21 @@ start: mass 34.5, centre of mass (-19.02496, -1.973302)
   placed Asteroid2: surface 120.0 px from the tip
   [msg 1] Harpoon: hooked
   PASS harpoon hooked the rock (state 2)
-  distance 121 -> 3, cable 14, ship spin 0.67
+  distance 121 -> 0, cable 14, ship spin 0.65
   PASS reeling pulled the rock in
   PASS harpoon back in its tube
 
-== Tether
+== Rock bolter
   placed Asteroid: surface 8.0 px from the tip
-  [msg 3] Tether: welded to a 1780-cell rock
+  [msg 3] Rock bolter: bolted to a 1771-cell rock
   PASS rock welded and moved under the ship
-  ship mass 34.4 -> 1814.4 (rock 1780.0)
+  ship mass 35.4 -> 1806.4 (rock 1771.0)
   PASS rock's mass added
-  rock offset in ship space (35.99683, 134.6022) -> (35.99682, 134.6022), ship v (6.94697, 4.644827)
+  rock offset in ship space (18.73058, 159.6151) -> (18.73058, 159.6151), ship v (6.004543, 5.865626)
   PASS ship and rock move as one
-  cut 109 cells, asteroids 3 -> 4
+  cut 94 cells, asteroids 3 -> 4
   PASS cut-off part went to space
-  [msg 3] Tether: let go
+  [msg 3] Rock bolter: let go
   PASS let go
 
 == Magnetic clamp
@@ -44,26 +44,26 @@ start: mass 34.5, centre of mass (-19.02496, -1.973302)
   [msg 4] Clamp: no grip. Nothing magnetic in there
   PASS no grip on a barren rock
   placed Asteroid3: surface 4.0 px from the tip
-  near the pads: Asteroid3, 4923 cells, 4.0 px, ore inside true
+  near the pads: Asteroid3, 4911 cells, 4.0 px, ore inside true
   [msg 4] Clamp: locked on
-  PASS grip on a rock with ore (4923 cells)
+  PASS grip on a rock with ore (4911 cells)
   [msg 4] Clamp: slipped!
-  heavy rock (mass 492) after a full-thrust second: gripping false, gap 163.7 px
+  heavy rock (mass 491) after a full-thrust second: gripping false, gap 151.6 px
 
 == Demolition charges
   placed Asteroid2: surface 30.0 px from the tip
   PASS 2 thrown charges stuck on the rock
   [msg 1] Charges: 2 detonated
-  same face: 1851 -> 1669 cells
+  same face: 1871 -> 1346 cells
   PASS 2 charges planted on opposite sides of the same rock
   [msg 1] Charges: 2 detonated
-  rock cells 160 -> 25, asteroids 27 -> 34
+  rock cells 160 -> 3, asteroids 38 -> 43
   PASS det-cord cut the rock in pieces
 
 == Survey probe
   placed Asteroid3: surface 60.0 px from the tip
   [msg 3] Probe P1 launched
-  revealed ore 29 -> 29 of 374 (0 within range of the probe, 0 of those missed)
+  revealed ore 18 -> 36 of 377 (3 within range of the probe, 0 of those missed)
   PASS probe revealed every ore cell in range, buried or not
 
 == Beacon and flare
@@ -77,7 +77,7 @@ start: mass 34.5, centre of mass (-19.02496, -1.973302)
   [msg 2] Cache buoy dropped
   PASS buoy latched the chunk
   marker 'Cache 1 chunks, 10 cells'
-  ship to buoy: 92 px
+  ship to buoy: 83 px
   [msg 2] Cache: 1 chunks let go
   after opening: buoy holds 0, chunk valid true
   chunk parent Node2D, in group true, frozen false
@@ -96,14 +96,14 @@ start: mass 34.5, centre of mass (-19.02496, -1.973302)
   PASS capacitor recharging from the surplus (40.0)
 
 == Ballast and balance view
-  centre of mass (-20.07239, -1.579353) -> (-25.15409, -9.951455)
+  centre of mass (-20.07239, -1.579353) -> (-25.15411, -9.951457)
   PASS ballast on the left pulls the centre of mass left
-  Forward       303 px/s²  turns 58°/s² ccw
-  Backward       61 px/s²  turns 12°/s² cw
-  Strafe left    61 px/s²  turns 25°/s² ccw
-  Strafe right   61 px/s²  turns 25°/s² cw
+  Forward       303 px/s²  turns 71°/s² ccw
+  Backward       61 px/s²  turns 14°/s² cw
+  Strafe left    61 px/s²  turns 30°/s² ccw
+  Strafe right   61 px/s²  turns 30°/s² cw
   [msg 2] Ballast pod jettisoned
-  after dropping it: (-19.10938, 0.0)
+  after dropping it: (-19.10829, 0.000006)
 
 == Tear-off
   placed Asteroid3: surface 40.0 px from the tip

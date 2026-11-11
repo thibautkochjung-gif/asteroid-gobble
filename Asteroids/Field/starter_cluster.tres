@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="AsteroidFormation" format=3 uid="uid://d2sydkta7cvl5"]
+
+[ext_resource type="Script" uid="uid://cj8u3k3jtrnnk" path="res://Asteroids/Field/asteroid_formation.gd" id="1_formation"]
+
+[resource]
+script = ExtResource("1_formation")
+name = "Starter cluster"
+min_area_radius = 550.0
+max_area_radius = 650.0
+concentration = 1.3
+min_count = 9
+max_count = 11
+min_rock_radius = 6.0
+max_rock_radius = 30.0
+size_skew = 1.3
+min_ore_types = 2
+max_ore_types = 3
+valuable_chance = 0.85
+min_ore_ratio = 0.08
+max_ore_ratio = 0.15
+max_drift = 0.5

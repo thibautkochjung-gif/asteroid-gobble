@@ -77,6 +77,21 @@ func _ready() -> void:
 	arm.setup(ship)
 
 
+func get_cooldown_ratio() -> float:
+	if cooldown_time <= 0.0:
+		return 0.0
+
+	return clampf(_cooldown / cooldown_time, 0.0, 1.0)
+
+
+func get_hit_distance(global_point: Vector2) -> float:
+	return arm.get_hit_distance(global_point)
+
+
+func get_damage_points() -> PackedVector2Array:
+	return arm.get_damage_points()
+
+
 # Swapped out while carrying: let go, or the chunk would stay frozen without collisions forever.
 func _exit_tree() -> void:
 	if is_instance_valid(carried):
@@ -91,6 +106,7 @@ func _process(_delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	arm.speed_scale = get_performance() # Damaged: the arm moves slower. Broken: it's stuck
 	arm.refresh_hull()
 	_tick_ignored(delta)
 
@@ -166,10 +182,8 @@ func _update_target(delta: float) -> void:
 	var search_length := arm.max_reach + search_margin
 	var candidates: Array[Asteroid] = []
 
-	for node in get_tree().get_nodes_in_group(Asteroid.GROUP):
-		var asteroid := node as Asteroid
-
-		if asteroid != null and _is_grabbable(asteroid, search_length):
+	for asteroid in Asteroid.find_near(get_tree(), global_position, search_length):
+		if _is_grabbable(asteroid, search_length):
 			candidates.append(asteroid)
 
 	var found := arm.find_reachable(candidates, search_length, scan_directions, turn_cost)
@@ -185,7 +199,7 @@ func _is_grabbable(asteroid: Asteroid, search_length: float) -> bool:
 	if asteroid.cells.is_empty() or asteroid.cells.size() > max_chunk_cells:
 		return false
 
-	if asteroid.freeze: # Welded to the ship (Tether), or already held
+	if asteroid.freeze: # Welded to the ship (RockBolter), or already held
 		return false
 
 	if _ignored.has(asteroid.get_instance_id()):

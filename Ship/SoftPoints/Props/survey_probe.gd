@@ -71,12 +71,7 @@ func get_marker_text() -> String:
 func _ping() -> void:
 	_ring_age = 0.0
 
-	for node in get_tree().get_nodes_in_group(Asteroid.GROUP):
-		var rock := node as Asteroid
-
-		if rock == null:
-			continue
-
+	for rock in Asteroid.find_near(get_tree(), global_position, scan_radius):
 		if rock.get_closest_point(global_position).distance_to(global_position) > scan_radius:
 			continue
 

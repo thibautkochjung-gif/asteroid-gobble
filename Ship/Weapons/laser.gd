@@ -25,6 +25,7 @@ enum State { IDLE, CHARGING, FIRING }
 @export var charged_color: Color = Color(0.3, 1.0, 0.4, 0.6) # Green: minimal windup reached
 @export var full_charge_color: Color = Color(1.0, 0.55, 0.1, 0.7) # Orange: full charge
 @export var beam_color: Color = Color(1.0, 0.15, 0.1, 1.0)
+@export var range_fade: float = 200.0 # px. The preview and the shot fade out over this stretch before max_range
 
 var state: State = State.IDLE
 var charge_time: float = 0.0
@@ -46,12 +47,13 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed(fire_action):
 		_on_fire_pressed()
 
+	_update_aim_for_state(delta)
+
 	if state != State.CHARGING:
 		return
 
-	charge_time += delta * draw_power(charge_power * delta)
-	_update_preview()
-	_set_beam_length(_get_preview_length(_get_hits(1)))
+	charge_time += delta * draw_power(charge_power * delta) * get_performance() # Damaged: slower charge
+	_set_beam(_get_preview_length(_get_hits(1)), _get_preview_color())
 
 	if Input.is_action_just_released(fire_action):
 		_on_fire_released()
@@ -59,6 +61,13 @@ func _process(delta: float) -> void:
 
 func is_on_cooldown() -> bool:
 	return not cooldown_timer.is_stopped()
+
+
+func get_cooldown_ratio() -> float:
+	if cooldown_timer.is_stopped():
+		return 0.0
+
+	return cooldown_timer.time_left / cooldown_timer.wait_time
 
 
 func is_charged() -> bool:
@@ -93,21 +102,27 @@ func _on_fire_released() -> void:
 		_cancel_charge()
 
 
+# Aims while charging, holds still during the shot (the beam stays where it hit), swings back when idle.
+func _update_aim_for_state(delta: float) -> void:
+	if state == State.CHARGING:
+		update_aim(delta)
+	elif state == State.IDLE:
+		reset_aim(delta)
+
+
 func _start_charging() -> void:
 	state = State.CHARGING
 	charge_time = 0.0
-	beam.visible = true
-	_update_preview()
+	beam.visible = true # _process() draws it this same frame
 
 
-func _update_preview() -> void:
+func _get_preview_color() -> Color:
 	if is_charged():
-		beam.default_color = charged_color.lerp(full_charge_color, get_charge_ratio())
-		return
+		return charged_color.lerp(full_charge_color, get_charge_ratio())
 
 	var color := preview_color
 	color.a *= lerpf(0.25, 1.0, charge_time / windup_time)
-	beam.default_color = color
+	return color
 
 
 func _cancel_charge() -> void:
@@ -119,8 +134,7 @@ func _fire() -> void:
 	var penetration := get_penetration()
 	var hits := _get_hits(penetration) # Hardness is at least 1: never more cells than the budget
 	var vaporized := _spend_budget(hits, penetration)
-	_set_beam_length(_get_beam_length(hits, vaporized, penetration))
-	beam.default_color = beam_color
+	_set_beam(_get_beam_length(hits, vaporized, penetration), beam_color)
 
 	var vaporized_points := PackedVector2Array()
 	var cloud_velocity := Vector2.ZERO
@@ -188,8 +202,8 @@ func _get_beam_length(hits: Array[Dictionary], vaporized: Array[Dictionary], pen
 	return vaporized.back()["exit"]
 
 
-func _set_beam_length(length: float) -> void:
-	beam.points = PackedVector2Array([Vector2.ZERO, Vector2(length, 0.0)])
+func _set_beam(length: float, color: Color) -> void:
+	set_range_line(beam, length, color, max_range, range_fade)
 
 
 func _on_fire_timer_timeout() -> void:

@@ -1,7 +1,7 @@
 class_name SmelterRoom
 extends Room
 
-# Receives gobbled chunks from the hangar and melts them into ore for the cargo rooms.
+# Receives gobbled chunks from the hangar and melts them into ore for the ingot holds.
 #
 # The chamber is physical: chunks inside are rigid bodies (SmelterChunk) that collide with each
 # other and with the chamber's walls, so the room holds what physically fits, and no more.
@@ -21,7 +21,7 @@ extends Room
 # width (centre first), so chunks pile up side by side instead of in a single file. The chunk then rides the conveyor
 # (CarriedChunk, no physics) to that spot and becomes a SmelterChunk there. One chunk on the
 # conveyor at a time, so two can't land on the same spot.
-# Stalls when the cargo is full, and slows down when the generator runs dry.
+# Stalls when the ingot holds are full, and slows down when the generator runs dry.
 #
 # The chamber fills the room, inside its walls, minus one texel at the back for the furnace grate.
 # So a bigger slot gives a bigger chamber: more chunks fit, and bigger ones.
@@ -363,8 +363,8 @@ func _smelt(delta: float) -> bool:
 
 	var target_chunk: SmelterChunk = target["chunk"]
 
-	if ship_rooms.get_free_cargo_cells() < _get_yield(target_chunk, target["cell"]):
-		return false # Cargo full
+	if ship_rooms.get_free_ingot_units() < _get_yield(target_chunk, target["cell"]):
+		return false # Ingot holds full
 
 	_melt_progress += smelt_rate * delta * _draw_power(delta)
 
@@ -392,7 +392,7 @@ func _find_cell_in_furnace() -> Dictionary:
 
 
 func _melt(chunk: SmelterChunk, cell: Vector2i) -> void:
-	ship_rooms.store_ore(chunk.ore_type, _get_yield(chunk, cell))
+	ship_rooms.store_ingots(chunk.ore_type, _get_yield(chunk, cell))
 	chunk.remove_cell(cell)
 
 	if chunk.get_cell_count() == 0:

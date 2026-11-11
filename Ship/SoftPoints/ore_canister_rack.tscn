@@ -1,0 +1,9 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Ship/SoftPoints/canister_rack.gd" id="1_script"]
+
+[node name="OreCanisterRack" type="Node2D"]
+script = ExtResource("1_script")
+cargo = 1
+capacity = 20.0
+liquid_color = Color(0.5, 0.46, 0.42, 1)

@@ -2,8 +2,8 @@ class_name ShipMass
 extends Node
 
 # Keeps the ship's RigidBody2D mass and centre of mass in sync with what it carries:
-# hull + chunks in the smelters + smelted ore in cargo + fuel + soft points (and what they hold,
-# including a rock welded on by a tether).
+# hull + chunks in the smelters + smelted ore in cargo + fuel + ammo + soft points (and what they
+# hold, including a rock bolted on by a rock bolter).
 # Same thrust on a heavier ship = less acceleration and slower turns.
 #
 # Centre of mass: the average position of every part of the ship, weighted by its mass.
@@ -17,6 +17,7 @@ extends Node
 @export var ship: RigidBody2D
 @export var rooms: ShipRooms
 @export var soft_points: ShipSoftPoints # Optional
+@export var hardpoints: ShipHardpoints # Optional: the hull's ammo locker
 
 @export var hull_mass: float = 20.0
 @export var hull_center_of_mass: Vector2 = Vector2(-10, 0) # Empty ship, in the ship's space
@@ -28,6 +29,10 @@ extends Node
 
 func _ready() -> void:
 	ship.center_of_mass_mode = RigidBody2D.CENTER_OF_MASS_MODE_CUSTOM
+
+	if soft_points != null:
+		soft_points.mass_changed.connect(_update.bind(true))
+
 	_update(true)
 
 
@@ -47,6 +52,7 @@ func get_total_mass() -> float:
 	if soft_points != null:
 		total += soft_points.get_total_mass()
 
+	total += _get_locker_mass()
 	return total
 
 
@@ -69,6 +75,12 @@ func get_center_of_mass() -> Vector2:
 		total += soft_points.get_total_mass()
 		weighted += soft_points.get_weighted_position_sum()
 
+	var locker_mass := _get_locker_mass()
+
+	if locker_mass > 0.0:
+		total += locker_mass
+		weighted += ship.to_local(hardpoints.global_position) * locker_mass
+
 	return weighted / total
 
 
@@ -82,12 +94,25 @@ func _update(force: bool) -> void:
 	var center := get_center_of_mass()
 
 	if force or center.distance_to(ship.center_of_mass) > center_update_threshold:
-		ship.center_of_mass = center
+		_move_center_of_mass(center)
+
+
+# Godot's linear_velocity is the velocity of the centre of mass. Moving that point while the ship
+# spins would change how fast every part of the hull moves (a rock let go by the rock bolter: the
+# ship would lose its sling motion and just spin in place). So the velocity follows the point:
+# v at the new centre = v at the old one + spin x (new - old).
+func _move_center_of_mass(center: Vector2) -> void:
+	var shift := ship.global_transform.basis_xform(center - ship.center_of_mass)
+	ship.linear_velocity += Vector2(-shift.y, shift.x) * ship.angular_velocity
+	ship.center_of_mass = center
 
 
 func _get_room_mass(room: Room) -> float:
-	if room is CargoRoom:
-		return (room as CargoRoom).stored_cells * ore_mass_per_cell
+	if room is IngotHoldRoom:
+		return (room as IngotHoldRoom).stored_cells * ore_mass_per_cell
+
+	if room is OreBinRoom:
+		return (room as OreBinRoom).get_cell_count() * ore_mass_per_cell
 
 	if room is SmelterRoom:
 		return (room as SmelterRoom).get_cells() * ore_mass_per_cell
@@ -95,4 +120,15 @@ func _get_room_mass(room: Room) -> float:
 	if room is FuelTankRoom:
 		return (room as FuelTankRoom).fuel * fuel_mass_per_unit
 
+	if room is AmmoRoom:
+		return (room as AmmoRoom).rounds * ShipHardpoints.AMMO_MASS_PER_ROUND
+
 	return 0.0
+
+
+# The rounds in the hull's own locker. Its weight sits at the hardpoints node.
+func _get_locker_mass() -> float:
+	if hardpoints == null:
+		return 0.0
+
+	return hardpoints.built_in_ammo * ShipHardpoints.AMMO_MASS_PER_ROUND

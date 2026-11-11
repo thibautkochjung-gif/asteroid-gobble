@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Ship/Weapons/Net/net_launcher.gd" id="1_script"]
+
+[node name="NetLauncher" type="Node2D"]
+z_index = 1
+script = ExtResource("1_script")
+
+[node name="Muzzle" type="Marker2D" parent="."]
+position = Vector2(14, 0)

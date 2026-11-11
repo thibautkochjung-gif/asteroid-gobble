@@ -72,6 +72,10 @@ func get_status_text() -> String:
 	return "ready"
 
 
+func is_engaged() -> bool:
+	return state != State.STOWED
+
+
 func get_controls_text() -> String:
 	match state:
 		State.STOWED:

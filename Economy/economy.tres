@@ -1,0 +1,122 @@
+[gd_resource type="Resource" script_class="EconomyConfig" format=3 uid="uid://c8u2hm45snpe4"]
+
+[ext_resource type="Script" uid="uid://d3on8wh46gy21" path="res://Economy/economy_config.gd" id="1_economy"]
+[ext_resource type="Script" uid="uid://cqowvedckoc8d" path="res://Economy/field_destination.gd" id="2_field"]
+[ext_resource type="Script" uid="uid://bp28kcwesco0" path="res://Economy/insurance_plan.gd" id="3_insurance"]
+[ext_resource type="Resource" uid="uid://b5cpxq4ouxrft" path="res://Asteroids/Field/belt_default.tres" id="4_belt"]
+[ext_resource type="Script" path="res://Economy/hull_definition.gd" id="5_hull"]
+
+[sub_resource type="Resource" id="Field_near"]
+script = ExtResource("2_field")
+description = "Close to the ring. Small rocks, mostly ice and nickel-iron. Cheap and quiet."
+ores_hint = "Water ice, nickel-iron"
+profile = ExtResource("4_belt")
+world_seed = 101
+
+[sub_resource type="Resource" id="Field_cobalt"]
+script = ExtResource("2_field")
+display_name = "Cobalt reach"
+description = "A day out. Bigger rocks, cobalt in the clusters."
+ores_hint = "Nickel-iron, cobalt"
+drop_fee = 500
+profile = ExtResource("4_belt")
+world_seed = 202
+
+[sub_resource type="Resource" id="Field_drift"]
+script = ExtResource("2_field")
+display_name = "Deep drift"
+description = "Far out. Gold turns up in the big rocks."
+ores_hint = "Cobalt, gold"
+licence_tier = 2
+drop_fee = 1200
+profile = ExtResource("4_belt")
+world_seed = 303
+
+[sub_resource type="Resource" id="Field_shoals"]
+script = ExtResource("2_field")
+display_name = "Outer shoals"
+description = "The edge of the belt. Platinum, and nobody to call for help."
+ores_hint = "Gold, platinum"
+licence_tier = 3
+drop_fee = 3000
+profile = ExtResource("4_belt")
+world_seed = 404
+
+[sub_resource type="Resource" id="Insurance_none"]
+script = ExtResource("3_insurance")
+description = "Lose the ship, lose everything."
+
+[sub_resource type="Resource" id="Insurance_basic"]
+script = ExtResource("3_insurance")
+display_name = "Basic"
+description = "Pays back half the hull."
+premium_ratio = 0.03
+payout_ratio = 0.5
+
+[sub_resource type="Resource" id="Insurance_full"]
+script = ExtResource("3_insurance")
+display_name = "Full"
+description = "Pays back 90% of the hull and the modules."
+premium_ratio = 0.07
+payout_ratio = 0.9
+covers_modules = true
+
+[sub_resource type="Resource" id="Hull_bucket"]
+script = ExtResource("5_hull")
+id = &"bucket"
+display_name = "The Bucket"
+description = "Industrial, rugged, a bit shabby. Turns unevenly."
+scene_path = "res://Ship/Hulls/bucket.tscn"
+price = 8000
+
+[resource]
+script = ExtResource("1_economy")
+market_depth = Dictionary[int, float]({
+2: 600.0,
+3: 800.0,
+4: 400.0,
+5: 200.0,
+6: 120.0
+})
+fields = Array[ExtResource("2_field")]([SubResource("Field_near"), SubResource("Field_cobalt"), SubResource("Field_drift"), SubResource("Field_shoals")])
+insurance_plans = Array[ExtResource("3_insurance")]([SubResource("Insurance_none"), SubResource("Insurance_basic"), SubResource("Insurance_full")])
+hulls = Array[ExtResource("5_hull")]([SubResource("Hull_bucket")])
+starting_hull = &"bucket"
+room_prices = Dictionary[int, int]({
+0: 4000,
+1: 1500,
+2: 1000,
+3: 1200,
+4: 1000
+})
+hardpoint_prices = Dictionary[int, int]({
+0: 2500,
+1: 1200,
+2: 3500,
+3: 900,
+4: 6000,
+5: 3000,
+6: 2500,
+7: 9000,
+8: 8000,
+9: 7000,
+10: 14000,
+11: 16000,
+12: 22000
+})
+soft_point_prices = Dictionary[int, int]({
+0: 600,
+1: 2400,
+2: 700,
+3: 1400,
+4: 2000,
+5: 1800,
+6: 600,
+7: 1500,
+8: 1600,
+9: 500,
+10: 1200,
+11: 900,
+12: 800,
+13: 700
+})

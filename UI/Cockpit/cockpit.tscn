@@ -1,0 +1,623 @@
+[gd_scene load_steps=25 format=3]
+
+[ext_resource type="Script" path="res://UI/Cockpit/cockpit.gd" id="1_cockpit"]
+[ext_resource type="Texture2D" path="res://UI/Cockpit/Art/cockpit_panels.png" id="2_panels"]
+[ext_resource type="Texture2D" path="res://UI/Cockpit/Art/cockpit_glass.png" id="3_glass"]
+[ext_resource type="Script" path="res://UI/Cockpit/Widgets/hud_led.gd" id="4_led"]
+[ext_resource type="Script" path="res://UI/Cockpit/Widgets/hud_needle.gd" id="5_needle"]
+[ext_resource type="Script" path="res://UI/Cockpit/Widgets/hud_toggle.gd" id="6_toggle"]
+[ext_resource type="Script" path="res://UI/Cockpit/Widgets/hud_hardpoint_button.gd" id="7_button"]
+[ext_resource type="Script" path="res://UI/Cockpit/Widgets/hud_annunciator.gd" id="8_tile"]
+[ext_resource type="Script" path="res://UI/Cockpit/Widgets/hud_lever.gd" id="9_lever"]
+[ext_resource type="Script" path="res://UI/Cockpit/Widgets/hud_tape_text.gd" id="10_tape"]
+[ext_resource type="Script" path="res://UI/Cockpit/Widgets/hud_radar.gd" id="11_radar"]
+[ext_resource type="Script" path="res://UI/Cockpit/Widgets/hud_loadout.gd" id="12_loadout"]
+[ext_resource type="Material" path="res://UI/Cockpit/Styles/worn_paint.tres" id="13_worn"]
+[ext_resource type="Script" path="res://UI/Cockpit/cockpit_disturbance.gd" id="14_disturbance"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/stencil_title.tres" id="ls_stencil_title"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/stencil_title_cream.tres" id="ls_stencil_title_cream"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/stencil_small.tres" id="ls_stencil_small"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/engraved.tres" id="ls_engraved"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/engraved_small.tres" id="ls_engraved_small"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/readout.tres" id="ls_readout"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/readout_cream.tres" id="ls_readout_cream"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/caption.tres" id="ls_caption"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/key_cap.tres" id="ls_key_cap"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/dial_face.tres" id="ls_dial_face"]
+[ext_resource type="LabelSettings" path="res://UI/Cockpit/Styles/sticker.tres" id="ls_sticker"]
+
+[node name="Cockpit" type="Control"]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+texture_filter = 2
+script = ExtResource("1_cockpit")
+
+[node name="PanelArt" type="TextureRect" parent="."]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+texture = ExtResource("2_panels")
+
+[node name="Loadout" type="Control" parent="."]
+offset_left = 24.0
+offset_top = 420.0
+offset_right = 480.0
+offset_bottom = 592.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("12_loadout")
+
+[node name="SpeedCaption" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 12.0
+offset_right = 124.0
+offset_bottom = 24.0
+mouse_filter = 2
+text = "SPEED"
+label_settings = ExtResource("ls_caption")
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="SpeedValue" type="Label" parent="."]
+offset_left = 18.0
+offset_top = 20.0
+offset_right = 76.0
+offset_bottom = 52.0
+mouse_filter = 2
+unique_name_in_owner = true
+text = "000"
+label_settings = ExtResource("ls_readout")
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="SpeedUnit" type="Label" parent="."]
+offset_left = 74.0
+offset_top = 32.0
+offset_right = 132.0
+offset_bottom = 48.0
+mouse_filter = 2
+text = "m/s"
+label_settings = ExtResource("ls_caption")
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="SpinCaption" type="Label" parent="."]
+offset_left = 152.0
+offset_top = 12.0
+offset_right = 248.0
+offset_bottom = 24.0
+mouse_filter = 2
+text = "SPIN"
+label_settings = ExtResource("ls_caption")
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="SpinValue" type="Label" parent="."]
+offset_left = 150.0
+offset_top = 20.0
+offset_right = 190.0
+offset_bottom = 52.0
+mouse_filter = 2
+unique_name_in_owner = true
+text = "0"
+label_settings = ExtResource("ls_readout_cream")
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="SpinUnit" type="Label" parent="."]
+offset_left = 188.0
+offset_top = 32.0
+offset_right = 250.0
+offset_bottom = 48.0
+mouse_filter = 2
+unique_name_in_owner = true
+text = "°/s"
+label_settings = ExtResource("ls_caption")
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="ImpactTile" type="Control" parent="."]
+offset_left = 1028.0
+offset_top = 14.0
+offset_right = 1102.0
+offset_bottom = 50.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("8_tile")
+text = "IMPACT"
+
+[node name="LowPowerTile" type="Control" parent="."]
+offset_left = 1110.0
+offset_top = 14.0
+offset_right = 1184.0
+offset_bottom = 50.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("8_tile")
+text = "LOW PWR"
+
+[node name="LowFuelTile" type="Control" parent="."]
+offset_left = 1192.0
+offset_top = 14.0
+offset_right = 1266.0
+offset_bottom = 50.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("8_tile")
+text = "LOW FUEL"
+
+[node name="HardpointsTitle" type="Label" parent="."]
+offset_left = 28.0
+offset_top = 622.0
+offset_right = 200.0
+offset_bottom = 640.0
+mouse_filter = 2
+text = "HARDPOINTS"
+label_settings = ExtResource("ls_stencil_title")
+horizontal_alignment = 0
+vertical_alignment = 1
+material = ExtResource("13_worn")
+
+[node name="HardpointButton1" type="Control" parent="."]
+offset_left = 28.0
+offset_top = 644.0
+offset_right = 104.0
+offset_bottom = 704.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("7_button")
+title = "—"
+key_text = "LMB"
+
+[node name="HardpointButton2" type="Control" parent="."]
+offset_left = 120.0
+offset_top = 644.0
+offset_right = 196.0
+offset_bottom = 704.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("7_button")
+title = "—"
+key_text = "RMB"
+
+[node name="SoftPointsTitle" type="Label" parent="."]
+offset_left = 244.0
+offset_top = 626.0
+offset_right = 480.0
+offset_bottom = 642.0
+mouse_filter = 2
+text = "AUX · SOFT POINTS"
+label_settings = ExtResource("ls_stencil_title_cream")
+horizontal_alignment = 0
+vertical_alignment = 1
+material = ExtResource("13_worn")
+
+[node name="Mount1" type="Control" parent="."]
+offset_left = 237.0
+offset_top = 640.0
+offset_right = 297.0
+offset_bottom = 716.0
+mouse_filter = 2
+unique_name_in_owner = true
+
+[node name="KeyLabel" type="Label" parent="Mount1"]
+offset_left = 19.0
+offset_top = 4.0
+offset_right = 41.0
+offset_bottom = 21.0
+mouse_filter = 2
+text = "1"
+label_settings = ExtResource("ls_key_cap")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Led" type="Control" parent="Mount1"]
+offset_left = 37.0
+offset_right = 61.0
+offset_bottom = 24.0
+mouse_filter = 2
+script = ExtResource("4_led")
+
+[node name="Toggle" type="Control" parent="Mount1"]
+offset_left = 17.0
+offset_top = 26.0
+offset_right = 43.0
+offset_bottom = 54.0
+mouse_filter = 2
+script = ExtResource("6_toggle")
+
+[node name="Tape" type="Control" parent="Mount1"]
+offset_left = 4.0
+offset_top = 57.0
+offset_right = 56.0
+offset_bottom = 72.0
+mouse_filter = 2
+script = ExtResource("10_tape")
+text = "—"
+rotation = -0.05236
+pivot_offset = Vector2(26.0, 7.5)
+
+[node name="Mount2" type="Control" parent="."]
+offset_left = 299.0
+offset_top = 640.0
+offset_right = 359.0
+offset_bottom = 716.0
+mouse_filter = 2
+unique_name_in_owner = true
+
+[node name="KeyLabel" type="Label" parent="Mount2"]
+offset_left = 19.0
+offset_top = 4.0
+offset_right = 41.0
+offset_bottom = 21.0
+mouse_filter = 2
+text = "2"
+label_settings = ExtResource("ls_key_cap")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Led" type="Control" parent="Mount2"]
+offset_left = 37.0
+offset_right = 61.0
+offset_bottom = 24.0
+mouse_filter = 2
+script = ExtResource("4_led")
+
+[node name="Toggle" type="Control" parent="Mount2"]
+offset_left = 17.0
+offset_top = 26.0
+offset_right = 43.0
+offset_bottom = 54.0
+mouse_filter = 2
+script = ExtResource("6_toggle")
+
+[node name="Tape" type="Control" parent="Mount2"]
+offset_left = 6.0
+offset_top = 57.0
+offset_right = 54.0
+offset_bottom = 72.0
+mouse_filter = 2
+script = ExtResource("10_tape")
+text = "—"
+rotation = 0.034907
+pivot_offset = Vector2(24.0, 7.5)
+
+[node name="Mount3" type="Control" parent="."]
+offset_left = 361.0
+offset_top = 640.0
+offset_right = 421.0
+offset_bottom = 716.0
+mouse_filter = 2
+unique_name_in_owner = true
+
+[node name="KeyLabel" type="Label" parent="Mount3"]
+offset_left = 19.0
+offset_top = 4.0
+offset_right = 41.0
+offset_bottom = 21.0
+mouse_filter = 2
+text = "3"
+label_settings = ExtResource("ls_key_cap")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Led" type="Control" parent="Mount3"]
+offset_left = 37.0
+offset_right = 61.0
+offset_bottom = 24.0
+mouse_filter = 2
+script = ExtResource("4_led")
+
+[node name="Toggle" type="Control" parent="Mount3"]
+offset_left = 17.0
+offset_top = 26.0
+offset_right = 43.0
+offset_bottom = 54.0
+mouse_filter = 2
+script = ExtResource("6_toggle")
+
+[node name="Tape" type="Control" parent="Mount3"]
+offset_left = 6.0
+offset_top = 57.0
+offset_right = 54.0
+offset_bottom = 72.0
+mouse_filter = 2
+script = ExtResource("10_tape")
+text = "—"
+rotation = -0.017453
+pivot_offset = Vector2(24.0, 7.5)
+
+[node name="Mount4" type="Control" parent="."]
+offset_left = 423.0
+offset_top = 640.0
+offset_right = 483.0
+offset_bottom = 716.0
+mouse_filter = 2
+unique_name_in_owner = true
+
+[node name="KeyLabel" type="Label" parent="Mount4"]
+offset_left = 19.0
+offset_top = 4.0
+offset_right = 41.0
+offset_bottom = 21.0
+mouse_filter = 2
+text = "4"
+label_settings = ExtResource("ls_key_cap")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Led" type="Control" parent="Mount4"]
+offset_left = 37.0
+offset_right = 61.0
+offset_bottom = 24.0
+mouse_filter = 2
+script = ExtResource("4_led")
+
+[node name="Toggle" type="Control" parent="Mount4"]
+offset_left = 17.0
+offset_top = 26.0
+offset_right = 43.0
+offset_bottom = 54.0
+mouse_filter = 2
+script = ExtResource("6_toggle")
+
+[node name="Tape" type="Control" parent="Mount4"]
+offset_left = 6.0
+offset_top = 57.0
+offset_right = 54.0
+offset_bottom = 72.0
+mouse_filter = 2
+script = ExtResource("10_tape")
+text = "—"
+rotation = 0.069813
+pivot_offset = Vector2(24.0, 7.5)
+
+[node name="DoNotKick" type="Label" parent="."]
+offset_left = 352.0
+offset_top = 597.0
+offset_right = 448.0
+offset_bottom = 612.0
+mouse_filter = 2
+text = "DO NOT KICK"
+label_settings = ExtResource("ls_sticker")
+horizontal_alignment = 1
+vertical_alignment = 1
+rotation = -0.034907
+pivot_offset = Vector2(48.0, 7.5)
+
+[node name="Radar" type="Control" parent="."]
+offset_left = 552.0
+offset_top = 548.0
+offset_right = 728.0
+offset_bottom = 724.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("11_radar")
+
+[node name="StatusTitle" type="Label" parent="."]
+offset_left = 796.0
+offset_top = 622.0
+offset_right = 870.0
+offset_bottom = 640.0
+mouse_filter = 2
+text = "STATUS"
+label_settings = ExtResource("ls_stencil_title")
+horizontal_alignment = 0
+vertical_alignment = 1
+material = ExtResource("13_worn")
+
+[node name="GrindLed" type="Control" parent="."]
+offset_left = 787.0
+offset_top = 639.0
+offset_right = 811.0
+offset_bottom = 663.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("4_led")
+
+[node name="SmeltLed" type="Control" parent="."]
+offset_left = 787.0
+offset_top = 656.0
+offset_right = 811.0
+offset_bottom = 680.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("4_led")
+
+[node name="DoorLed" type="Control" parent="."]
+offset_left = 787.0
+offset_top = 673.0
+offset_right = 811.0
+offset_bottom = 697.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("4_led")
+
+[node name="ImpactLed" type="Control" parent="."]
+offset_left = 787.0
+offset_top = 690.0
+offset_right = 811.0
+offset_bottom = 714.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("4_led")
+
+[node name="GrindLabel" type="Label" parent="."]
+offset_left = 810.0
+offset_top = 645.0
+offset_right = 870.0
+offset_bottom = 657.0
+mouse_filter = 2
+text = "GRIND"
+label_settings = ExtResource("ls_engraved")
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="SmeltTape" type="Control" parent="."]
+offset_left = 808.0
+offset_top = 661.0
+offset_right = 854.0
+offset_bottom = 675.0
+mouse_filter = 2
+script = ExtResource("10_tape")
+text = "SMELT"
+font_size = 10
+rotation = -0.034907
+pivot_offset = Vector2(23.0, 7.0)
+
+[node name="DoorLabel" type="Label" parent="."]
+offset_left = 810.0
+offset_top = 679.0
+offset_right = 870.0
+offset_bottom = 691.0
+mouse_filter = 2
+text = "DOOR"
+label_settings = ExtResource("ls_engraved")
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="ImpactLabel" type="Label" parent="."]
+offset_left = 810.0
+offset_top = 696.0
+offset_right = 870.0
+offset_bottom = 708.0
+mouse_filter = 2
+text = "IMPACT"
+label_settings = ExtResource("ls_engraved")
+horizontal_alignment = 0
+vertical_alignment = 1
+
+[node name="Terminal" type="RichTextLabel" parent="."]
+offset_left = 889.0
+offset_top = 624.0
+offset_right = 1048.0
+offset_bottom = 706.0
+mouse_filter = 2
+unique_name_in_owner = true
+clip_contents = true
+theme_override_colors/default_color = Color(0.56, 0.88, 0.35, 1)
+theme_override_font_sizes/normal_font_size = 11
+theme_override_constants/line_separation = 1
+bbcode_enabled = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="FuelNeedle" type="Control" parent="."]
+offset_left = 1070.0
+offset_top = 630.0
+offset_right = 1134.0
+offset_bottom = 694.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("5_needle")
+
+[node name="PowerNeedle" type="Control" parent="."]
+offset_left = 1148.0
+offset_top = 630.0
+offset_right = 1212.0
+offset_bottom = 694.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("5_needle")
+
+[node name="FuelFace" type="Label" parent="."]
+offset_left = 1082.0
+offset_top = 674.0
+offset_right = 1122.0
+offset_bottom = 684.0
+mouse_filter = 2
+text = "FUEL"
+label_settings = ExtResource("ls_dial_face")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PowerFace" type="Label" parent="."]
+offset_left = 1160.0
+offset_top = 674.0
+offset_right = 1200.0
+offset_bottom = 684.0
+mouse_filter = 2
+text = "PWR"
+label_settings = ExtResource("ls_dial_face")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FuelValue" type="Label" parent="."]
+offset_left = 1064.0
+offset_top = 699.0
+offset_right = 1140.0
+offset_bottom = 711.0
+mouse_filter = 2
+unique_name_in_owner = true
+text = "0"
+label_settings = ExtResource("ls_engraved")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PowerValue" type="Label" parent="."]
+offset_left = 1142.0
+offset_top = 699.0
+offset_right = 1218.0
+offset_bottom = 711.0
+mouse_filter = 2
+unique_name_in_owner = true
+text = "0"
+label_settings = ExtResource("ls_engraved")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DoorLever" type="Control" parent="."]
+offset_left = 1232.0
+offset_top = 620.0
+offset_right = 1264.0
+offset_bottom = 692.0
+mouse_filter = 2
+unique_name_in_owner = true
+script = ExtResource("9_lever")
+
+[node name="DoorCaption" type="Label" parent="."]
+offset_left = 1228.0
+offset_top = 692.0
+offset_right = 1268.0
+offset_bottom = 702.0
+mouse_filter = 2
+text = "DOOR"
+label_settings = ExtResource("ls_stencil_small")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DoorKey" type="Label" parent="."]
+offset_left = 1228.0
+offset_top = 702.0
+offset_right = 1268.0
+offset_bottom = 712.0
+mouse_filter = 2
+unique_name_in_owner = true
+text = "SPACE"
+label_settings = ExtResource("ls_engraved_small")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InspectedSticker" type="Label" parent="."]
+offset_left = 1140.0
+offset_top = 607.0
+offset_right = 1220.0
+offset_bottom = 626.0
+mouse_filter = 2
+text = "INSPECTED 2187"
+label_settings = ExtResource("ls_sticker")
+horizontal_alignment = 1
+vertical_alignment = 1
+rotation = 0.069813
+pivot_offset = Vector2(40.0, 9.5)
+
+[node name="GlassArt" type="TextureRect" parent="."]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+texture = ExtResource("3_glass")
+
+[node name="Disturbance" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("14_disturbance")

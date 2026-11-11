@@ -1,13 +1,16 @@
 class_name MapMarkers
 extends Control
 
-# Marks the props that want to be found (beacons, probes, flares, the cache, lost modules):
-# a bracket and a label on screen, an arrow with the distance at the edge of the screen when off it.
-# Each prop says what its label is (SpaceProp.get_marker_text): empty = no marker.
+# Marks the props that want to be found (beacons, probes, flares, the cache, lost modules) and the
+# pickup mothership: a bracket and a label on screen, an arrow with the distance at the edge of the
+# screen when off it. Each one says what its label is (get_marker_text): empty = no marker.
 # Screen-space overlay: lives in the HUD's CanvasLayer, reads the camera through the viewport's
 # canvas transform.
+# Markers stay out of the cockpit's panels: a target behind a panel gets the edge arrow, pinned to
+# the free view.
 
 @export var ship: Node2D # Distances are measured from it
+@export var cockpit: Cockpit # Optional. Without it, markers use the whole screen
 @export var edge_margin: float = 28.0 # px from the screen's edge
 @export var font_size: int = 12
 
@@ -21,40 +24,43 @@ func _process(_delta: float) -> void:
 
 
 func _draw() -> void:
-	var canvas := get_viewport().get_canvas_transform()
-	var screen := get_viewport_rect()
-	var inner := screen.grow(-edge_margin)
-	var font := get_theme_default_font()
-
 	for node in get_tree().get_nodes_in_group(SpaceProp.GROUP):
 		var prop := node as SpaceProp
 
-		if prop == null:
-			continue
+		if prop != null:
+			_draw_marker(prop.global_position, prop.get_marker_text(), prop.get_marker_color())
 
-		var text := prop.get_marker_text()
+	for node in get_tree().get_nodes_in_group(Mothership.GROUP):
+		var mothership := node as Mothership
+		_draw_marker(mothership.get_marker_position(), mothership.get_marker_text(), mothership.get_marker_color())
 
-		if text.is_empty():
-			continue
 
-		var color := prop.get_marker_color()
-		var at := canvas * prop.global_position
+func _draw_marker(world_position: Vector2, text: String, color: Color) -> void:
+	if text.is_empty():
+		return
 
-		if inner.has_point(at):
-			_draw_bracket(at, color)
-			draw_string(font, at + Vector2(10.0, -8.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
-			continue
+	var screen := cockpit.get_free_view_rect() if cockpit != null else get_viewport_rect()
+	var inner := screen.grow(-edge_margin)
+	var font := get_theme_default_font()
+	var at := get_viewport().get_canvas_transform() * world_position
 
-		var center := screen.get_center()
-		var direction := (at - center).normalized()
-		var edge := _clamp_to_rect(center, direction, inner)
-		var distance := ship.global_position.distance_to(prop.global_position) if ship != null else 0.0
-		_draw_arrow(edge, direction, color)
+	if inner.has_point(at):
+		var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+		var text_at := (at + Vector2(10.0, -8.0 - text_size.y * 0.75)).clamp(screen.position, screen.end - text_size)
+		_draw_bracket(at, color)
+		draw_string(font, text_at + Vector2(0.0, text_size.y * 0.75), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+		return
 
-		var label := "%s  %d" % [text, roundi(distance)]
-		var label_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-		var label_at := (edge - direction * 22.0 - label_size * 0.5).clamp(screen.position, screen.end - label_size)
-		draw_string(font, label_at + Vector2(0.0, label_size.y * 0.75), label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+	var center := screen.get_center()
+	var direction := (at - center).normalized()
+	var edge := _clamp_to_rect(center, direction, inner)
+	var distance := ship.global_position.distance_to(world_position) if ship != null else 0.0
+	_draw_arrow(edge, direction, color)
+
+	var label := "%s  %d" % [text, roundi(distance)]
+	var label_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+	var label_at := (edge - direction * 22.0 - label_size * 0.5).clamp(screen.position, screen.end - label_size)
+	draw_string(font, label_at + Vector2(0.0, label_size.y * 0.75), label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 
 # Where a ray from `from` along `direction` leaves the rectangle.

@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://_tools/mothership_mockup.gd" id="1_mockup"]
+
+[node name="MothershipMockup" type="Node"]
+script = ExtResource("1_mockup")

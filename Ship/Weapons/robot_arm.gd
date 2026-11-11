@@ -16,7 +16,12 @@ extends Node2D
 # Angles are local to the shoulder: 0 = straight ahead.
 #
 # Hitbox: the links and the back of the head are collision shapes added to the ship's own body
-# (shape owners), moved every physics frame. Asteroids bump into the arm like into the hull.
+# (shape owners). Asteroids bump into the arm like into the hull. They're moved once per physics
+# frame, and only if the pose changed: moving a body's shapes makes the physics server redo work.
+#
+# Performance: move() remembers its last call. Same starting pose, same goal, same hull: the
+# answer is the same, so it's reused instead of searched again. That's the usual case for an arm
+# at rest, or a drill pressed against one spot.
 #
 # Expected children: UpperArm, Forearm (link sprites starting on their joint), ElbowJoint,
 # WristJoint, Head (with a Muzzle marker at the tip), Base.
@@ -44,6 +49,7 @@ const FLIP_GIVE_UP_TIME: float = 2.0 # A switch that can't happen (can't straigh
 var angle: float = 0.0 # Current aim (shoulder to tip), local
 var tip_distance: float = 0.0 # Current shoulder-to-tip distance
 var head_angle: float = 0.0 # Current head direction, local
+var speed_scale: float = 1.0 # Set by the weapon: a damaged arm moves slower. 0 = stuck
 
 var _ship: RigidBody2D
 var _elbow_sign: float = -1.0 # Which side the elbow bends to
@@ -56,6 +62,11 @@ var _forearm_length: float = 0.0
 var _hull_shapes: Array[Dictionary] = [] # { "node": CollisionShape2D, "polygon": inflated outline }
 var _hull_polygons: Array[PackedVector2Array] = [] # Same outlines in this node's space, this frame
 var _hitbox_owners: Array[int] = [] # Upper arm, forearm, head (if head_hitbox is set)
+var _hitbox_pose := Vector4(NAN, NAN, NAN, NAN) # Pose the hitbox was last placed for (angle, head, tip, elbow side)
+var _hull_key: Array = [] # Shape transforms (null = disabled) the outlines were built from
+var _hull_version: int = 0 # Goes up when the hull outlines change (a door moved)
+var _move_key: Array = [] # Last move()'s inputs, starting pose included
+var _move_result: Array = [] # ...and the pose it ended on
 
 @onready var upper_arm: Sprite2D = $UpperArm
 @onready var forearm: Sprite2D = $Forearm
@@ -73,6 +84,11 @@ func _ready() -> void:
 	head_angle = angle
 	tip_distance = rest_tip_distance
 	_update_pose_nodes()
+
+
+# Children process after their parent: by now the weapon has moved the arm for this frame.
+func _physics_process(_delta: float) -> void:
+	_apply_hitbox()
 
 
 func _exit_tree() -> void:
@@ -107,26 +123,42 @@ func setup(ship: RigidBody2D) -> void:
 		_elbow_sign = bend_sign
 
 	_update_pose_nodes()
+	_apply_hitbox()
 
 
 # Call once per physics frame, before any can_reach() or move(): the hangar doors move.
+# Rebuilds the outlines only if a shape moved or was switched on or off.
 func refresh_hull() -> void:
-	_hull_polygons.clear()
-
 	# No outlines = every pose counts as clear (the reach limits still apply).
 	if _ship == null or not avoid_hull:
+		if not _hull_polygons.is_empty():
+			_hull_polygons.clear()
+			_hull_version += 1
+
 		return
 
-	var ship_to_arm := global_transform.affine_inverse() * _ship.global_transform
+	var key: Array = []
 
 	for entry in _hull_shapes:
 		var collision: CollisionShape2D = entry["node"]
+		key.append(null if collision.disabled else collision.transform)
 
-		if collision.disabled:
+	if key == _hull_key:
+		return
+
+	_hull_key = key
+	_hull_version += 1
+	_hull_polygons.clear()
+
+	# Through the parents, not the global transforms: exact, so it doesn't jitter as the ship flies
+	var ship_to_arm := get_relative_transform_to_parent(_ship).affine_inverse()
+
+	for i in _hull_shapes.size():
+		if key[i] == null:
 			continue
 
-		var polygon: PackedVector2Array = entry["polygon"]
-		_hull_polygons.append(ship_to_arm * collision.transform * polygon)
+		var polygon: PackedVector2Array = _hull_shapes[i]["polygon"]
+		_hull_polygons.append(ship_to_arm * (key[i] as Transform2D) * polygon)
 
 
 # One step toward the goal pose: tip at goal_angle / goal_tip_distance. goal_head is the head
@@ -139,6 +171,31 @@ func refresh_hull() -> void:
 # So when the current side is blocked and the other isn't, the arm first straightens (head in line),
 # switches side while straight (no visible jump), then carries on.
 func move(delta: float, goal_angle: float, goal_tip_distance: float, wanted_head: float = NAN) -> void:
+	delta *= speed_scale
+
+	# NAN never equals itself: a stand-in keeps the key comparable
+	var key: Array = [angle, head_angle, tip_distance, _elbow_sign, goal_angle, goal_tip_distance, 1.0e9 if is_nan(wanted_head) else wanted_head, delta, _hull_version]
+	var can_reuse := not _flip_pending
+
+	if can_reuse and key == _move_key:
+		angle = _move_result[0]
+		head_angle = _move_result[1]
+		tip_distance = _move_result[2]
+		_elbow_sign = _move_result[3]
+		_flip_pending = _move_result[4]
+		_flip_time = 0.0
+		_update_pose_nodes()
+		return
+
+	_move_key = key if can_reuse else []
+	_search_move(delta, goal_angle, goal_tip_distance, wanted_head)
+
+	if not _move_key.is_empty():
+		_move_result = [angle, head_angle, tip_distance, _elbow_sign, _flip_pending]
+
+
+func _search_move(delta: float, goal_angle: float, goal_tip_distance: float, wanted_head: float) -> void:
+
 	var goal_tip := clampf(goal_tip_distance, get_min_tip_distance(), _get_straight_tip_distance())
 	var goal_head := _choose_head_angle(goal_angle, goal_tip, wanted_head)
 	var wanted_sign := _elbow_sign
@@ -245,7 +302,10 @@ func find_reachable(candidates: Array[Asteroid], search_length: float, direction
 		var ray_end := global_position + get_global_direction(scan_angle) * search_length
 
 		for asteroid in candidates:
-			var hits := asteroid.get_cells_on_ray(global_position, ray_end)
+			if not asteroid.may_cross(global_position, ray_end):
+				continue
+
+			var hits := asteroid.get_cells_on_ray(global_position, ray_end, 1)
 
 			if hits.is_empty():
 				continue
@@ -264,6 +324,12 @@ func find_reachable(candidates: Array[Asteroid], search_length: float, direction
 
 func get_rest_angle() -> float:
 	return _side * deg_to_rad(rest_outward_degrees)
+
+
+# Folded in the rest pose, wrist in line: the weapon can skip the arm's work until it needs it again.
+func is_at_rest() -> bool:
+	var is_folded := is_equal_approx(angle, get_rest_angle()) and is_equal_approx(tip_distance, rest_tip_distance)
+	return is_folded and is_equal_approx(head_angle, angle) and not _flip_pending
 
 
 # With a rigid wrist the head must fit between the shoulder and the tip. A bending wrist can
@@ -293,6 +359,23 @@ func get_tip_position() -> Vector2:
 
 func get_wrist_position() -> Vector2:
 	return get_tip_position() - get_head_direction() * _head_length
+
+
+# Where the wear marks go (DamageMarks), in global coordinates: the elbow and the wrist, so they follow the arm.
+func get_damage_points() -> PackedVector2Array:
+	return PackedVector2Array([elbow_joint.global_position, wrist_joint.global_position])
+
+
+# Shortest distance from a global point to the arm: shoulder, elbow, wrist, tip.
+func get_hit_distance(global_point: Vector2) -> float:
+	var joints := PackedVector2Array([global_position, elbow_joint.global_position, wrist_joint.global_position, get_tip_position()])
+	var best := INF
+
+	for i in joints.size() - 1:
+		var closest := Geometry2D.get_closest_point_to_segment(global_point, joints[i], joints[i + 1])
+		best = minf(best, closest.distance_to(global_point))
+
+	return best
 
 
 # --- Pose
@@ -422,7 +505,7 @@ func _get_bend(wrist_distance: float) -> float:
 	return acos(clampf(cos_bend, -1.0, 1.0))
 
 
-# Sprites and hitbox follow the current pose.
+# Sprites follow the current pose. The hitbox follows in _apply_hitbox(), once per physics frame.
 func _update_pose_nodes() -> void:
 	var wrist := _get_wrist_local()
 	var elbow := _solve_elbow(wrist, _elbow_sign)
@@ -435,7 +518,16 @@ func _update_pose_nodes() -> void:
 	head.position = wrist
 	head.rotation = head_angle
 
-	_update_hitbox(elbow, wrist)
+
+func _apply_hitbox() -> void:
+	var pose := Vector4(angle, head_angle, tip_distance, _elbow_sign)
+
+	if pose == _hitbox_pose:
+		return
+
+	_hitbox_pose = pose
+	var wrist := _get_wrist_local()
+	_update_hitbox(_solve_elbow(wrist, _elbow_sign), wrist)
 
 
 # --- Hull and hitbox
@@ -499,7 +591,7 @@ func _update_hitbox(elbow: Vector2, wrist: Vector2) -> void:
 	if _hitbox_owners.is_empty():
 		return
 
-	var arm_to_ship := _ship.global_transform.affine_inverse() * global_transform
+	var arm_to_ship := get_relative_transform_to_parent(_ship)
 	var upper := Transform2D(elbow.angle(), elbow * 0.5)
 	var lower := Transform2D((wrist - elbow).angle(), (elbow + wrist) * 0.5)
 	var head_transform := Transform2D(head_angle, wrist)

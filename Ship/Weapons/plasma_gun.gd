@@ -14,7 +14,7 @@ enum State { IDLE, WINDING_UP, ACTIVE }
 
 @export_group("Beam")
 @export var max_range: float = 600.0
-@export var vaporize_time: float = 0.5 # Contact time to vaporize a soft-rock cell. Times the hardness
+@export var vaporize_time: float = 0.125 # Contact time to vaporize a soft-rock cell. Times the hardness
 @export var windup_time: float = 0.8 # Harmless, pale beam before it engages
 
 @export_group("Power")
@@ -54,12 +54,15 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not Input.is_action_pressed(fire_action):
 		_stop()
+		reset_aim(delta)
 		return
 
 	if state == State.IDLE:
 		_start_windup()
 
-	var power_ratio := draw_power(power_per_second * delta)
+	update_aim(delta)
+
+	var power_ratio := draw_power(power_per_second * delta) * get_performance() # Damaged: slower windup and burn
 
 	if state == State.WINDING_UP:
 		_windup_left -= delta * power_ratio

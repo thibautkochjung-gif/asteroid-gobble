@@ -48,12 +48,20 @@ static func get_display_id(id: int, is_revealed: bool) -> int:
 	return HIDDEN_ORE_LOOK
 
 
-# Weighted by spawn_weight: common ores come up more often.
-static func pick_ore_type() -> int:
+# Weighted by spawn_weight: common ores come up more often. Pass a seeded rng for a repeatable pick.
+static func pick_ore_type(rng: RandomNumberGenerator = null) -> int:
+	return pick_ore_from(ORES, rng)
+
+
+# One of these ores, weighted by spawn_weight.
+static func pick_ore_from(ores: Array[int], rng: RandomNumberGenerator = null) -> int:
 	var weights := PackedFloat32Array()
 
-	for id in ORES:
+	for id in ores:
 		weights.append(get_material(id).spawn_weight)
 
-	var rng := RandomNumberGenerator.new()
-	return ORES[rng.rand_weighted(weights)]
+	if rng == null:
+		rng = RandomNumberGenerator.new()
+		rng.randomize()
+
+	return ores[rng.rand_weighted(weights)]

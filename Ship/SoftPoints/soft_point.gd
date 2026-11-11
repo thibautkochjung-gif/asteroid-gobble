@@ -10,8 +10,9 @@ extends Node2D
 #   Rocks bump into it, and you scrape it when you scrape a rock.
 # - Its mass counts at its own position (ShipMass asks ShipSoftPoints), so a heavy module on one
 #   side moves the centre of mass, and the thrusters then turn the ship differently.
-# - A hard enough hit on the footprint tears it off (ShipSoftPoints). It floats away as a
-#   ModuleProp, with whatever it held, and goes back on an empty mount when you touch it gently.
+# - Hits on the footprint don't tear it off (ShipSoftPoints.tear_off_enabled is off). A jettisoned
+#   module floats away as a ModuleProp, with whatever it held, and goes back on an empty mount
+#   when you touch it gently.
 #
 # Input, one key per mount (ShipSoftPoints sets use_action):
 # - a quick tap calls _on_tap();
@@ -23,13 +24,13 @@ extends Node2D
 # would send its shot. See "Aim preview" below.
 #
 # Hooks the ship's systems call through ShipSoftPoints: fuel (drop tank), power (capacitor),
-# restocking at the station, and taking back props that come home (racks).
+# ammo (ammo box), restocking at the station, and taking back props that come home (racks).
 
-enum Type { DROP_TANK, TETHER, BEACON_RACK, HARPOON, CHARGE_RACK, MAGNETIC_CLAMP, BALLAST, CAPACITOR, PROBE_RACK, FLARE_RACK, CACHE_BUOY, CARGO_CANISTER } # New types go at the end: scenes store them as numbers
+enum Type { DROP_TANK, ROCK_BOLTER, BEACON_RACK, HARPOON, CHARGE_RACK, MAGNETIC_CLAMP, BALLAST, CAPACITOR, PROBE_RACK, FLARE_RACK, CACHE_BUOY, INGOT_CANISTER, AMMO_BOX, ORE_CANISTER } # New types go at the end: scenes store them as numbers
 
 const TYPE_NAMES := {
 	Type.DROP_TANK: "Drop tank",
-	Type.TETHER: "Tether",
+	Type.ROCK_BOLTER: "Rock bolter",
 	Type.BEACON_RACK: "Beacon rack",
 	Type.HARPOON: "Harpoon winch",
 	Type.CHARGE_RACK: "Demolition charges",
@@ -39,7 +40,9 @@ const TYPE_NAMES := {
 	Type.PROBE_RACK: "Survey probes",
 	Type.FLARE_RACK: "Flares",
 	Type.CACHE_BUOY: "Cache buoy",
-	Type.CARGO_CANISTER: "Cargo canister",
+	Type.INGOT_CANISTER: "Ingot canister",
+	Type.AMMO_BOX: "Ammo box",
+	Type.ORE_CANISTER: "Ore canister",
 }
 
 const TEXEL: float = 2.0
@@ -48,10 +51,11 @@ const AIM_DASH: float = 6.0 # px
 
 @export var footprint: Rect2 = Rect2(0, -8, 8, 16) # Mount space, px. x >= 0 is outside the hull
 @export var dry_mass: float = 1.0 # Without its load (fuel, items...)
-@export var break_impulse: float = 1500.0 # mass * px/s. A hit on this module that jolts the ship this hard tears it off
+@export var break_impulse: float = 1500.0 # mass * px/s. Only used if ShipSoftPoints.tear_off_enabled: a hit this hard tears it off
 @export var can_jettison: bool = false # Holding the key throws the whole module away
 @export var hold_time: float = 0.35 # s. Shorter is a tap
 @export var jettison_speed: float = 20.0 # px/s outward, on top of the ship's own motion
+@export var toughness: float = 1.0 # Times a standard part's points (PartHealth). Subclasses may set it in _init()
 
 @export_group("Aim preview")
 @export var aim_color: Color = Color(0.85, 0.9, 1.0, 0.35) # Nothing on the path
@@ -75,6 +79,7 @@ var _is_pressed: bool = false
 var _is_holding: bool = false
 var _press_time: float = 0.0
 var _was_aiming: bool = false
+var _health: PartHealth
 
 
 func _process(delta: float) -> void:
@@ -132,6 +137,37 @@ func get_type_name() -> String:
 	return TYPE_NAMES[soft_point_type]
 
 
+# --- Damage (see ShipDamage)
+# Damaged: weaker launches, less power drawn (weaker clamp, slower reel). Broken: the key does nothing.
+# The health stays with the module: jettison it and pick it back up, it's still damaged.
+
+
+func get_part_health() -> PartHealth:
+	if _health == null:
+		_health = PartHealth.new(toughness)
+
+	return _health
+
+
+func get_part_name() -> String:
+	return get_type_name()
+
+
+func get_performance() -> float:
+	return get_part_health().get_performance()
+
+
+# Shortest distance to the footprint.
+func get_hit_distance(global_point: Vector2) -> float:
+	var local := to_local(global_point)
+	return local.distance_to(local.clamp(footprint.position, footprint.end))
+
+
+# Where the wear marks go (DamageMarks), in global coordinates: the middle of the footprint.
+func get_damage_points() -> PackedVector2Array:
+	return PackedVector2Array([to_global(footprint.get_center())])
+
+
 # --- Mass
 
 
@@ -154,6 +190,11 @@ func get_status_text() -> String:
 # What tap and hold do right now, e.g. "tap: fire  hold: reel in".
 func get_controls_text() -> String:
 	return "hold: jettison" if can_jettison else ""
+
+
+# True while the module is out doing its job (line out, bolted on): the cockpit lights its switch.
+func is_engaged() -> bool:
+	return false
 
 
 # --- Hooks for the ship's systems. Defaults: the module has none of these.
@@ -188,6 +229,19 @@ func get_power() -> float:
 
 func get_power_capacity() -> float:
 	return 0.0
+
+
+# Rounds the hardpoint weapons can load. Returns how many were given.
+func draw_ammo(_count: int) -> int:
+	return 0
+
+
+func get_ammo() -> int:
+	return 0
+
+
+func get_ammo_capacity() -> int:
+	return 0
 
 
 # Station service: refill, reload. Prototype: the pause menu's debug button.
@@ -266,17 +320,19 @@ func get_space() -> Node:
 	return ship.get_parent()
 
 
-# Returns the share of the needed power the ship could give, 0..1.
+# Returns the share of the needed power the ship could give, 0..1, times the module's performance:
+# a damaged module gets less out of the same power.
 func draw_ship_power(amount: float) -> float:
 	if soft_points == null or soft_points.generator == null or amount <= 0.0:
-		return 1.0
+		return get_performance()
 
-	return soft_points.generator.draw_power(amount) / amount
+	return soft_points.generator.draw_power(amount) / amount * get_performance()
 
 
 # Puts a prop in space at a global point, moving with the ship there plus `push`.
 # The ship gets the opposite push (Newton's third law), at the module.
 func launch_prop(prop: SpaceProp, at: Vector2, push: Vector2) -> void:
+	push *= get_performance() # Damaged launcher: weaker shot (the aim preview knows)
 	get_space().add_child(prop)
 	prop.global_position = at
 	prop.rotation = global_rotation
@@ -364,7 +420,7 @@ func _update_aim_preview() -> void:
 # Same velocity as a real shot: the ship's velocity at the tip (spin included) plus the push.
 func _draw_aim_preview() -> void:
 	var from := get_tip()
-	var velocity := get_ship_velocity_at(from) + get_outward() * get_aim_speed()
+	var velocity := get_ship_velocity_at(from) + get_outward() * get_aim_speed() * get_performance()
 	var to := from + velocity.normalized() * get_aim_range()
 	var hit := find_aim_hit(from, to)
 
@@ -378,6 +434,10 @@ func _draw_aim_preview() -> void:
 
 
 func _read_input(delta: float) -> void:
+	if Input.is_action_just_pressed(use_action) and get_part_health().is_broken():
+		say("Damaged, not responding")
+		return
+
 	if Input.is_action_just_pressed(use_action):
 		_is_pressed = true
 		_is_holding = false

@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_mat")
-display_name = "Soft rock"
+display_name = "Regolith"
 color = Color(0.56, 0.51, 0.46, 1)
 hardness = 1.0
 is_ore = false

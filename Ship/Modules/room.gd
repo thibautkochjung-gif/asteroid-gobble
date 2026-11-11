@@ -10,18 +10,20 @@ extends Node2D
 
 signal contents_changed
 
-enum Type { SMELTER, CARGO, FUEL_TANK }
+enum Type { SMELTER, INGOT_HOLD, FUEL_TANK, AMMO, ORE_BIN } # New types go at the end: scenes store them as numbers
 
 const TYPE_NAMES := {
 	Type.SMELTER: "Smelter",
-	Type.CARGO: "Liquid cargo",
+	Type.INGOT_HOLD: "Ingot hold",
 	Type.FUEL_TANK: "Fuel tank",
+	Type.AMMO: "Ammo store",
+	Type.ORE_BIN: "Ore bin",
 }
 
 const TEXEL: float = 2.0 # One art pixel, in px. Everything is drawn on this grid
 const FLOOR_LINE_SPACING: int = 4 # In texels
 
-@export var room_type: Type = Type.CARGO
+@export var room_type: Type = Type.INGOT_HOLD
 
 @export_group("Shell")
 @export var wall_color: Color = Color(0.42, 0.4, 0.38)
@@ -75,7 +77,7 @@ func clear_contents() -> void:
 
 
 # --- Taking chunks from the hold
-# Rooms that take raw chunks (the smelter; later, a holding room) override these four.
+# Rooms that take raw chunks (the smelter, the ore bin) override these four.
 # The hangar and the grinder only go through them, never through a specific room type.
 
 

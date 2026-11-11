@@ -25,7 +25,7 @@ func _ready() -> void:
 		await _throw_case("rock 60 px away, spinning 1 rad/s", 60.0, 1.0, 0.0, false)
 		await _throw_case("rock 60 px away, ship moving sideways 40 px/s", 60.0, 0.0, 40.0, false)
 
-	await _throw_case("rock welded by the tether", 15.0, 0.0, 0.0, true)
+	await _throw_case("rock welded by the rock bolter", 15.0, 0.0, 0.0, true)
 
 	_write("")
 	_write("DONE: %d checks passed, %d failed" % [_checks_passed, _checks_failed])
@@ -42,12 +42,12 @@ func _throw_case(label: String, gap: float, spin: float, side_speed: float, weld
 	_place_rock_off_tip(rock, rack, gap)
 
 	if weld:
-		var tether := _install(1, SoftPoint.Type.TETHER) as Tether
-		_place_rock_off_tip(rock, tether, 10.0)
+		var bolter := _install(1, SoftPoint.Type.ROCK_BOLTER) as RockBolter
+		_place_rock_off_tip(rock, bolter, 10.0)
 		await _frames(2)
-		tether._on_tap()
-		await _frames(5)
-		_write("  welded: %s" % (tether.welded == rock))
+		bolter._on_tap()
+		await _seconds(0.5) # The strut and pitons travel out, then lock
+		_write("  welded: %s" % (bolter.welded == rock))
 		_write("  rock from rack tip: %.1f px" % rock.get_closest_point(rack.get_tip()).distance_to(rack.get_tip()))
 
 	await _frames(3)
@@ -97,8 +97,8 @@ func _throw_case(label: String, gap: float, spin: float, side_speed: float, weld
 		_check(torn > 0 and flying == torn, "chunks fly off a welded rock")
 
 	if weld:
-		var tether := _soft_points.get_module(1) as Tether
-		tether._on_tap()
+		var bolter := _soft_points.get_module(1) as RockBolter
+		bolter._on_tap()
 		await _frames(3)
 
 

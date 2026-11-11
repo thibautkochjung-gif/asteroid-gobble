@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Mothership/mothership.gd" id="1_mothership"]
+
+[node name="Mothership" type="AnimatableBody2D"]
+z_index = -1
+script = ExtResource("1_mothership")

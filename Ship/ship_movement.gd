@@ -4,6 +4,7 @@ class_name ShipMovement
 @export var thruster_group: Node2D
 @export var fuel_source: ShipRooms # Optional: without it, thrusters never run dry
 @export var drop_tanks: ShipSoftPoints # Optional: soft point drop tanks, burned before fuel_source
+@export var computer: ShipComputer # Optional: flight computer (X kill momentum, F match speed, settling)
 
 var thrusters: Array[Thruster] = []
 var thrusters_by_role: Dictionary = {}
@@ -30,8 +31,17 @@ func _physics_process(delta: float) -> void:
 	for thruster in thrusters:
 		thruster.reset_strength()
 
+	var is_player_steering := false
+
 	for role in thrusters_by_role:
-		_request_role(role, Input.get_action_strength(role))
+		var strength := Input.get_action_strength(role)
+		_request_role(role, strength)
+
+		if strength > 0.0:
+			is_player_steering = true
+
+	if computer != null:
+		computer.steer(thrusters, is_player_steering) # Never fights the player: steps back while they steer
 
 	_limit_by_fuel(delta)
 

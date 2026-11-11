@@ -1,0 +1,78 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Background/sky_layer.gd" id="1_layer"]
+[ext_resource type="Script" path="res://Background/sky_tile.gd" id="2_tile"]
+[ext_resource type="Script" path="res://Background/nebula_field.gd" id="3_nebula"]
+[ext_resource type="Texture2D" path="res://Background/textures/stars_faint.png" id="4_faint"]
+[ext_resource type="Texture2D" path="res://Background/textures/stars.png" id="5_stars"]
+[ext_resource type="Texture2D" path="res://Background/textures/stars_bright.png" id="6_bright"]
+[ext_resource type="Texture2D" path="res://Background/textures/dust.png" id="7_dust"]
+[ext_resource type="Texture2D" path="res://Background/textures/nebula_red_1.png" id="neb_red_1"]
+[ext_resource type="Texture2D" path="res://Background/textures/nebula_red_2.png" id="neb_red_2"]
+[ext_resource type="Texture2D" path="res://Background/textures/nebula_red_3.png" id="neb_red_3"]
+[ext_resource type="Texture2D" path="res://Background/textures/nebula_red_4.png" id="neb_red_4"]
+[ext_resource type="Texture2D" path="res://Background/textures/nebula_violet_1.png" id="neb_violet_1"]
+[ext_resource type="Texture2D" path="res://Background/textures/nebula_violet_2.png" id="neb_violet_2"]
+[ext_resource type="Texture2D" path="res://Background/textures/nebula_violet_3.png" id="neb_violet_3"]
+[ext_resource type="Texture2D" path="res://Background/textures/nebula_teal_1.png" id="neb_teal_1"]
+[ext_resource type="Texture2D" path="res://Background/textures/nebula_teal_2.png" id="neb_teal_2"]
+[ext_resource type="Texture2D" path="res://Background/textures/nebula_teal_3.png" id="neb_teal_3"]
+
+[node name="SkyBackground" type="Node"]
+
+[node name="Base" type="CanvasLayer" parent="."]
+layer = -100
+
+[node name="Color" type="ColorRect" parent="Base"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.027, 0.024, 0.047, 1)
+
+[node name="Nebulas" type="CanvasLayer" parent="."]
+layer = -90
+script = ExtResource("1_layer")
+scroll_scale = 0.02
+
+[node name="NebulaField" type="Node2D" parent="Nebulas"]
+script = ExtResource("3_nebula")
+textures = Array[Texture2D]([ExtResource("neb_red_1"), ExtResource("neb_red_2"), ExtResource("neb_red_3"), ExtResource("neb_red_4"), ExtResource("neb_violet_1"), ExtResource("neb_violet_2"), ExtResource("neb_violet_3"), ExtResource("neb_teal_1"), ExtResource("neb_teal_2"), ExtResource("neb_teal_3")])
+
+[node name="FaintStars" type="CanvasLayer" parent="."]
+layer = -80
+script = ExtResource("1_layer")
+scroll_scale = 0.03
+
+[node name="Tile" type="Sprite2D" parent="FaintStars"]
+texture = ExtResource("4_faint")
+script = ExtResource("2_tile")
+
+[node name="Stars" type="CanvasLayer" parent="."]
+layer = -70
+script = ExtResource("1_layer")
+scroll_scale = 0.06
+
+[node name="Tile" type="Sprite2D" parent="Stars"]
+texture = ExtResource("5_stars")
+script = ExtResource("2_tile")
+
+[node name="BrightStars" type="CanvasLayer" parent="."]
+layer = -60
+script = ExtResource("1_layer")
+scroll_scale = 0.12
+
+[node name="Tile" type="Sprite2D" parent="BrightStars"]
+texture = ExtResource("6_bright")
+script = ExtResource("2_tile")
+
+[node name="Dust" type="CanvasLayer" parent="."]
+layer = -50
+script = ExtResource("1_layer")
+scroll_scale = 0.9
+
+[node name="Tile" type="Sprite2D" parent="Dust"]
+texture = ExtResource("7_dust")
+script = ExtResource("2_tile")

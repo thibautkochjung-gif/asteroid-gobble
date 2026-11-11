@@ -38,7 +38,7 @@ func _ready() -> void:
 	await _test_layout_and_mass()
 	await _test_drop_tank()
 	await _test_harpoon()
-	await _test_tether()
+	await _test_rock_bolter()
 	await _test_clamp()
 	await _test_charges()
 	await _test_probe()
@@ -134,20 +134,20 @@ func _test_harpoon() -> void:
 	_park_rock(rock, Vector2(700, -600))
 
 
-func _test_tether() -> void:
+func _test_rock_bolter() -> void:
 	await _clear_area()
 	_write("")
-	_write("== Tether")
+	_write("== Rock bolter")
 	_reset_ship()
-	var tether := _install(2, SoftPoint.Type.TETHER) as Tether
+	var bolter := _install(2, SoftPoint.Type.ROCK_BOLTER) as RockBolter
 	var rock := _main.get_node("Asteroid") as Asteroid
-	_place_rock_off_tip(rock, tether, 8.0)
+	_place_rock_off_tip(rock, bolter, 8.0)
 	await _frames(3)
 
 	var mass_before := _player.mass
-	tether._on_tap()
-	await _frames(5)
-	_check(tether.welded == rock and rock.get_parent() == _player, "rock welded and moved under the ship")
+	bolter._on_tap()
+	await _seconds(0.5) # The strut and pitons travel out, then lock
+	_check(bolter.welded == rock and rock.get_parent() == _player, "rock welded and moved under the ship")
 	_write("  ship mass %.1f -> %.1f (rock %.1f)" % [mass_before, _player.mass, rock.mass])
 	_check(_player.mass > mass_before + rock.mass * 0.9, "rock's mass added")
 
@@ -160,7 +160,7 @@ func _test_tether() -> void:
 	var relative_after := _player.global_transform.affine_inverse() * rock.global_transform
 	_write("  rock offset in ship space %s -> %s, ship v %s" % [relative.origin, relative_after.origin, _player.linear_velocity])
 	_check(relative.origin.distance_to(relative_after.origin) < 0.5, "ship and rock move as one")
-	await _shot("soft_points_tether", _player.global_position, 1.2)
+	await _shot("soft_points_rock_bolter", _player.global_position, 1.2)
 
 	# Cut the welded rock in two: the far half must go to space, not into the ship.
 	_reset_ship()
@@ -168,7 +168,7 @@ func _test_tether() -> void:
 	var center := rock.to_local(rock.get_global_center()) / rock.cell_size
 	var cells: Array[Vector2i] = []
 	cells.assign(rock.cells.keys())
-	var far_side := rock.to_local(tether.get_tip()).direction_to(center * rock.cell_size)
+	var far_side := rock.to_local(bolter.get_tip()).direction_to(center * rock.cell_size)
 	var cut_count := 0
 
 	for cell in cells:
@@ -189,9 +189,9 @@ func _test_tether() -> void:
 	_write("  cut %d cells, asteroids %d -> %d" % [cut_count, groups_before, groups_after])
 	_check(groups_after > groups_before and not chunk_in_ship, "cut-off part went to space")
 
-	tether._on_tap()
+	bolter._on_tap()
 	await _frames(3)
-	_check(tether.welded == null and rock.get_parent() == _main and not rock.freeze, "let go")
+	_check(bolter.welded == null and rock.get_parent() == _main and not rock.freeze, "let go")
 	_park_rock(rock, Vector2(-500, 500))
 
 
@@ -208,6 +208,8 @@ func _test_clamp() -> void:
 	for cell in barren.cells.keys():
 		if barren.cells[cell] == barren.ore_type:
 			barren.cells[cell] = CellMaterials.Id.SOFT_ROCK
+
+	barren.refresh_counts()
 
 	_place_rock_off_tip(barren, magnet, 4.0)
 	await _frames(3)
@@ -473,13 +475,14 @@ func _test_tear_off() -> void:
 	_write("== Tear-off")
 	_reset_ship()
 	var tank := _install(3, SoftPoint.Type.DROP_TANK) as DropTank
+	_soft_points.clear_mount(2) # A big rock also hits the module next door and shares the blow with it
 	var rock := _main.get_node("Asteroid3") as Asteroid
 	_place_rock_off_tip(rock, tank, 40.0)
 	rock.linear_velocity = -tank.get_outward() * 250.0
 	await _seconds(1.0)
 	var torn := _soft_points.get_module(3) == null
 	_write("  heavy rock hit the drop tank at 250 px/s: torn off %s" % torn)
-	_check(torn, "hard hit tears the module off")
+	_check(not torn, "hard hit leaves the module on (tear-off disabled)")
 
 
 # --- Helpers

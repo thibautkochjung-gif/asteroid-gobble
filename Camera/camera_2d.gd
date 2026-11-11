@@ -24,6 +24,7 @@ var noise_seed_x := 0.0
 var noise_seed_y := 100.0  # offset so X and Y don't move in lockstep
 var recoil_offset := Vector2.ZERO
 var recoil_velocity := Vector2.ZERO
+var ambient_trauma := 0.0 # Steady shake floor, doesn't decay. Set every frame by its owner (SpeedFx)
 
 
 # Called when the node enters the scene tree for the first time.
@@ -48,7 +49,8 @@ func _process(delta: float) -> void:
 	recoil_offset += recoil_velocity * delta
 	
 	# Jitter: noise-driven, scaled by trauma squared
-	var shake_amount = trauma * trauma * 4
+	var shaking := maxf(trauma, ambient_trauma)
+	var shake_amount = shaking * shaking * 4
 	noise_seed_x += delta * 60.0
 	noise_seed_y += delta * 60.0
 	var jitter_x = clampf(noise.get_noise_1d(noise_seed_x) * noise_gain, -1.0, 1.0) * max_jitter_offset * shake_amount
@@ -70,3 +72,7 @@ func _on_screenshake_requested(amount: float, direction: Vector2) -> void:
 	
 func _on_recoil_requested(amount: float, direction: Vector2) -> void:
 	recoil_velocity += direction * (max_jitter_offset * kick_relative_force) * amount * recoil_strength
+
+
+func set_ambient_trauma(amount: float) -> void:
+	ambient_trauma = clampf(amount, 0.0, 1.0)

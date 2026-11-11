@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="AsteroidFieldProfile" format=3 uid="uid://b5cpxq4ouxrft"]
+
+[ext_resource type="Script" uid="uid://ccg8trxlp1e8l" path="res://Asteroids/Field/asteroid_field_profile.gd" id="1_profile"]
+[ext_resource type="Script" uid="uid://cj8u3k3jtrnnk" path="res://Asteroids/Field/asteroid_formation.gd" id="2_formation"]
+
+[sub_resource type="Resource" id="Resource_pocket"]
+script = ExtResource("2_formation")
+name = "Pocket"
+weight = 40.0
+min_area_radius = 280.0
+max_area_stretch = 1.6
+concentration = 1.6
+max_rock_radius = 32.0
+size_skew = 1.8
+
+[sub_resource type="Resource" id="Resource_ore_cluster"]
+script = ExtResource("2_formation")
+name = "Ore cluster"
+weight = 22.0
+max_area_radius = 650.0
+max_area_stretch = 1.4
+concentration = 1.4
+max_count = 12
+min_rock_radius = 4.0
+max_rock_radius = 30.0
+size_skew = 1.5
+min_ore_types = 2
+max_ore_types = 3
+valuable_chance = 0.7
+min_ore_ratio = 0.08
+max_ore_ratio = 0.15
+max_drift = 1.0
+
+[sub_resource type="Resource" id="Resource_gravel"]
+script = ExtResource("2_formation")
+name = "Gravel field"
+weight = 22.0
+min_area_radius = 500.0
+max_area_radius = 1100.0
+max_area_stretch = 3.0
+concentration = 1.0
+min_count = 50
+max_count = 110
+min_rock_radius = 1.0
+max_rock_radius = 4.0
+size_skew = 1.3
+max_drift = 1.0
+
+[sub_resource type="Resource" id="Resource_giant"]
+script = ExtResource("2_formation")
+name = "Giant"
+weight = 8.0
+min_area_radius = 1100.0
+max_area_radius = 1250.0
+concentration = 1.0
+min_count = 5
+max_count = 12
+min_rock_radius = 2.0
+max_rock_radius = 14.0
+size_skew = 1.6
+min_core_radius = 70.0
+max_core_radius = 150.0
+max_drift = 0.5
+
+[resource]
+script = ExtResource("1_profile")
+formations = Array[ExtResource("2_formation")]([SubResource("Resource_pocket"), SubResource("Resource_ore_cluster"), SubResource("Resource_gravel"), SubResource("Resource_giant")])

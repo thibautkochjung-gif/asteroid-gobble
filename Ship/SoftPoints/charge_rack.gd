@@ -295,7 +295,7 @@ func _start_ghosting(rocks: Array[RigidBody2D], torn: Array[RigidBody2D]) -> voi
 
 	var bodies: Array[RigidBody2D] = rocks.duplicate()
 
-	# A rock welded to a ship (Tether) is frozen under it, and its collisions are on the ship's body.
+	# A rock welded to a ship (RockBolter) is frozen under it, and its collisions are on the ship's body.
 	for rock in rocks:
 		var holder := rock.get_parent() as RigidBody2D
 

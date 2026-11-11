@@ -3,7 +3,7 @@ extends SpaceProp
 
 # A sticky charge, thrown from a ChargeRack. It flies with the momentum it was thrown with and
 # sticks to the first rock it touches, where it touched, however long it flew. Thrown into a
-# laser tunnel or a drill hole, it sticks deep inside the rock. A rock welded to a ship (Tether)
+# laser tunnel or a drill hole, it sticks deep inside the rock. A rock welded to a ship (RockBolter)
 # counts: its collisions are on the ship's body, through shapes the rock owns.
 # Stuck, it rides on its cell (BodyAnchor): if the rock is cut, it follows its piece. If its cell
 # is destroyed, it falls off and drifts, and won't stick again.
@@ -84,7 +84,7 @@ func _try_stick() -> void:
 
 
 # Rocks this charge touches. Usually the body it touches is the rock. A rock welded to a ship
-# has its collisions off, and copies of its shapes on the ship's body (Tether): the contact is
+# has its collisions off, and copies of its shapes on the ship's body (RockBolter): the contact is
 # with the ship, through a shape whose owner is the rock.
 func _get_touched_rocks() -> Array[Asteroid]:
 	var rocks: Array[Asteroid] = []

@@ -34,6 +34,7 @@ func _ready() -> void:
 	resume_button.pressed.connect(_set_paused.bind(false))
 	refuel_button.pressed.connect(rooms.refuel)
 	refuel_button.pressed.connect(soft_points.restock)
+	refuel_button.pressed.connect(hardpoints.restock_ammo) # After soft_points.restock: see restock_ammo()
 	soft_points.layout_changed.connect(_refresh_soft_point_rows)
 	empty_cargo_button.pressed.connect(rooms.empty_cargo)
 	rooms.layout_changed.connect(_refresh_slot_rows)
@@ -108,13 +109,17 @@ func _refresh_contents() -> void:
 		var room := rooms.get_room(i)
 		_contents_labels[i].text = room.get_status_text() if room != null else "Empty"
 
-	status_label.text = "Fuel %d / %d    Cargo %d / %d cells    Smelters %d / %d cells" % [
+	status_label.text = "Fuel %d / %d    Ingots %d / %d u    Ore bins %d / %d cells    Smelters %d / %d cells    Ammo %d / %d" % [
 		rooms.get_fuel(),
 		rooms.get_fuel_capacity(),
-		rooms.get_cargo_cells(),
-		rooms.get_cargo_capacity_cells(),
+		rooms.get_ingot_units(),
+		rooms.get_ingot_capacity(),
+		rooms.get_ore_bin_cells(),
+		rooms.get_ore_bin_capacity(),
 		rooms.get_smelter_cells(),
 		rooms.get_smelter_capacity(),
+		hardpoints.get_ammo(),
+		hardpoints.get_ammo_capacity(),
 	]
 
 

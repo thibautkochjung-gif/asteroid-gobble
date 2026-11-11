@@ -8,7 +8,8 @@ extends RefCounted
 # - look: one pixel per texel. RGB = colour (material, flecks, facets, cracks). A = crater shade.
 #   Painted once when the body is created (or copied from the parent, for a chunk), then only
 #   touched where ore gets revealed.
-# - cells: one pixel per cell. R = filled, G = in the core. Rebuilt after each change: it's small.
+# - cells: one pixel per cell. R = filled, G = in the core. Patched where cells changed: a giant
+#   has ~72 000 cells, too many to loop over after every laser shot.
 # The shader works out holes, the outline, the darker inner edge and the darker core from them,
 # on the GPU, so a laser shot never repaints thousands of texels.
 #
@@ -33,11 +34,14 @@ var _look_image: Image
 var _look_texture: ImageTexture
 var _cells_image: Image
 var _cells_texture: ImageTexture
+var _cells_data := PackedByteArray() # The cells image's bytes, kept so a cut only patches a few of them
 var _facet_noise := FastNoiseLite.new()
 var _crack_noise := FastNoiseLite.new()
 
 
 # cell_list: every cell the body will ever have. A body only loses cells, so the grid is sized once.
+# Only makes images: safe on a worker thread. Call create_gpu_resources() on the main thread
+# before drawing.
 func _init(cell_list: Array, look_seed: int) -> void:
 	_seed = look_seed
 	_facet_noise.seed = look_seed
@@ -58,8 +62,14 @@ func _init(cell_list: Array, look_seed: int) -> void:
 	grid_size = high - low + Vector2i(3, 3)
 
 	_look_image = Image.create_empty(grid_size.x * TEXELS_PER_CELL, grid_size.y * TEXELS_PER_CELL, false, Image.FORMAT_RGBA8)
+	_cells_data.resize(grid_size.x * grid_size.y * 2)
+	_cells_data.fill(0)
+
+
+# Textures and material, from the images as they are now. Main thread only.
+func create_gpu_resources() -> void:
 	_look_texture = ImageTexture.create_from_image(_look_image)
-	_cells_image = Image.create_empty(grid_size.x, grid_size.y, false, Image.FORMAT_RG8)
+	_cells_image = Image.create_from_data(grid_size.x, grid_size.y, false, Image.FORMAT_RG8, _cells_data)
 	_cells_texture = ImageTexture.create_from_image(_cells_image)
 
 	material = ShaderMaterial.new()
@@ -95,14 +105,14 @@ func paint_all(materials: Dictionary[Vector2i, int], revealed: Dictionary[Vector
 	for crater in craters:
 		_stamp_crater(crater, floor_shade, rim_shade)
 
-	_look_texture.update(_look_image)
+	_push_look()
 
 
 # For a chunk: takes the parent's texels instead of painting them again (same coordinates).
 func copy_from(parent: AsteroidLook) -> void:
 	var source_position := (grid_origin - parent.grid_origin) * TEXELS_PER_CELL
 	_look_image.blit_rect(parent.get_look_image(), Rect2i(source_position, _look_image.get_size()), Vector2i.ZERO)
-	_look_texture.update(_look_image)
+	_push_look()
 
 
 # Paints these cells again (their look changed: ore revealed). Keeps the crater shade.
@@ -113,24 +123,54 @@ func repaint(changed: Array[Vector2i], materials: Dictionary[Vector2i, int], rev
 	for cell in changed:
 		_paint_cell(cell, CellMaterials.get_display_id(materials[cell], revealed.has(cell)), true)
 
-	_look_texture.update(_look_image)
+	_push_look()
 
 
-# Which cells are filled, and which of them are in the core (not in the band).
-func update_cells(materials: Dictionary[Vector2i, int], band: Dictionary[Vector2i, bool]) -> void:
-	var data := PackedByteArray()
-	data.resize(grid_size.x * grid_size.y * 2)
-	data.fill(0)
+# Which cells are filled, and which of them are in the core (not in the band). Every cell.
+func fill_cells(materials: Dictionary[Vector2i, int], band: Dictionary[Vector2i, bool]) -> void:
+	_cells_data.fill(0)
 
 	for cell in materials:
-		var position := cell - grid_origin
-		var index := (position.y * grid_size.x + position.x) * 2
-		data[index] = 255
+		_set_cell_bytes(cell, materials, band)
 
-		if not band.has(cell):
-			data[index + 1] = 255
+	_push_cells()
 
-	_cells_image.set_data(grid_size.x, grid_size.y, false, Image.FORMAT_RG8, data)
+
+# Same, only for these cells: the ones a cut removed or brought into the band.
+func patch_cells(changed: Array[Vector2i], materials: Dictionary[Vector2i, int], band: Dictionary[Vector2i, bool]) -> void:
+	if changed.is_empty():
+		return
+
+	for cell in changed:
+		_set_cell_bytes(cell, materials, band)
+
+	_push_cells()
+
+
+func _set_cell_bytes(cell: Vector2i, materials: Dictionary[Vector2i, int], band: Dictionary[Vector2i, bool]) -> void:
+	var position := cell - grid_origin
+	var index := (position.y * grid_size.x + position.x) * 2
+
+	if not materials.has(cell):
+		_cells_data[index] = 0
+		_cells_data[index + 1] = 0
+		return
+
+	_cells_data[index] = 255
+	_cells_data[index + 1] = 0 if band.has(cell) else 255
+
+
+# Sends the images to their textures, once they exist (not yet on a worker thread).
+func _push_look() -> void:
+	if _look_texture != null:
+		_look_texture.update(_look_image)
+
+
+func _push_cells() -> void:
+	if _cells_texture == null:
+		return
+
+	_cells_image.set_data(grid_size.x, grid_size.y, false, Image.FORMAT_RG8, _cells_data)
 	_cells_texture.update(_cells_image)
 
 

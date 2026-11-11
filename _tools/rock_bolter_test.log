@@ -1,0 +1,72 @@
+
+== rock at rest, ship at rest
+  placed Asteroid2: surface 20.0 px from the tip
+  [msg 3] Rock bolter: bolted to a 1783-cell rock
+  0.20 s: EXTENDING -> LOCKED
+  state after tap: LOCKED, rock parent Player
+  t=0.5 s ship v (23.36423, 0.828515) w 0.43, mass 214, inertia 1307057, rock offset (38.2352, 155.1979), finite true
+  t=1.0 s ship v (46.62798, 6.951508) w 0.89, mass 214, inertia 1269498, rock offset (38.23521, 155.1979), finite true
+  t=1.5 s ship v (64.56641, 22.64873) w 1.36, mass 214, inertia 1314253, rock offset (38.2352, 155.1979), finite true
+  t=2.0 s ship v (68.15652, 45.8973) w 1.79, mass 214, inertia 1276901, rock offset (38.23519, 155.1979), finite true
+  t=2.5 s ship v (52.04705, 62.46142) w 2.24, mass 214, inertia 1464496, rock offset (38.23522, 155.198), finite true
+  t=3.0 s ship v (30.87699, 54.55698) w 2.69, mass 214, inertia 1312317, rock offset (38.2352, 155.198), finite true
+  PASS rock at rest, ship at rest: rock stays put on the ship
+  PASS rock at rest, ship at rest: ship finite
+  [msg 3] Rock bolter: let go
+  hull speed 296.9 -> 292.7 px/s, spin 2.70 -> 2.70 rad/s, centre of mass now (-17.849, -0.542036)
+  PASS rock at rest, ship at rest: the ship keeps its own motion when it lets go
+  after release: rock v (82.53526, 106.2355), ship v at the rock (82.53526, 106.2355)
+  PASS rock at rest, ship at rest: rock leaves with the ship's motion
+  1 s later: state STOWED, rock v (82.53526, 106.2355), finite true
+
+== ship closing in at 25 px/s
+  placed Asteroid2: surface 30.0 px from the tip
+  [msg 3] Rock bolter: bolted to a 1783-cell rock
+  0.28 s: EXTENDING -> LOCKED
+  state after tap: LOCKED, rock parent Player
+  t=0.5 s ship v (9.343535, 22.01498) w 0.45, mass 214, inertia 1305163, rock offset (2.135086, 157.6429), finite true
+  t=1.0 s ship v (17.40781, 44.69603) w 0.90, mass 213, inertia 1545178, rock offset (2.135071, 157.643), finite true
+  t=1.5 s ship v (14.51345, 68.39304) w 1.34, mass 213, inertia 1272962, rock offset (2.135071, 157.643), finite true
+  t=2.0 s ship v (-2.596601, 84.56367) w 1.81, mass 213, inertia 1360130, rock offset (2.135071, 157.6429), finite true
+  t=2.5 s ship v (-25.36628, 80.54218) w 2.26, mass 213, inertia 1270673, rock offset (2.135071, 157.6429), finite true
+  t=3.0 s ship v (-30.51311, 58.5532) w 2.71, mass 213, inertia 1271449, rock offset (2.135101, 157.6429), finite true
+  PASS ship closing in at 25 px/s: rock stays put on the ship
+  PASS ship closing in at 25 px/s: ship finite
+  [msg 3] Rock bolter: let go
+  hull speed 298.8 -> 294.5 px/s, spin 2.73 -> 2.73 rad/s, centre of mass now (-17.68697, -0.291379)
+  PASS ship closing in at 25 px/s: the ship keeps its own motion when it lets go
+  after release: rock v (-60.28747, 123.5059), ship v at the rock (-60.28747, 123.5059)
+  PASS ship closing in at 25 px/s: rock leaves with the ship's motion
+  1 s later: state STOWED, rock v (-60.28747, 123.5059), finite true
+
+== ship closing in at 60 px/s
+  placed Asteroid2: surface 30.0 px from the tip
+  [msg 3] Rock bolter: too fast, the pitons bounced off
+  0.23 s: EXTENDING -> RELEASING
+  0.58 s: RELEASING -> RETRACTING
+  0.85 s: RETRACTING -> STOWED
+  state after tap: STOWED, rock parent Node2D
+  PASS ship closing in at 60 px/s: too fast, pitons bounce off
+
+== bolted, then another rock hits it
+  placed Asteroid2: surface 20.0 px from the tip
+  [msg 3] Rock bolter: bolted to a 1783-cell rock
+  0.20 s: EXTENDING -> LOCKED
+  state after tap: LOCKED, rock parent Player
+  after the hit: state LOCKED, module RockBolter:<Node2D#66756544347>, ship v (136.6821, -13.82986)
+  t=0.5 s ship v (127.3652, 7.642757) w 0.59, mass 213, inertia 1255457, rock offset (26.07264, 157.197), finite true
+  t=1.0 s ship v (111.7012, 25.87913) w 1.06, mass 213, inertia 1331018, rock offset (26.07264, 157.197), finite true
+  t=1.5 s ship v (143.9661, 48.22095) w 0.71, mass 213, inertia 1674047, rock offset (26.07264, 157.197), finite true
+  t=2.0 s ship v (120.0408, 50.26457) w 1.13, mass 213, inertia 1241376, rock offset (26.07266, 157.197), finite true
+  t=2.5 s ship v (110.0096, 69.4649) w 0.89, mass 213, inertia 1294670, rock offset (26.07265, 157.197), finite true
+  t=3.0 s ship v (105.5421, 69.55779) w 0.76, mass 213, inertia 1586255, rock offset (26.07265, 157.197), finite true
+  PASS bolted, then another rock hits it: rock stays put on the ship
+  PASS bolted, then another rock hits it: ship finite
+  [msg 3] Rock bolter: let go
+  hull speed 70.5 -> 70.5 px/s, spin 0.77 -> 0.77 rad/s, centre of mass now (-17.52027, -0.033486)
+  PASS bolted, then another rock hits it: the ship keeps its own motion when it lets go
+  after release: rock v (115.5734, 86.45793), ship v at the rock (115.5734, 86.45793)
+  PASS bolted, then another rock hits it: rock leaves with the ship's motion
+  1 s later: state STOWED, rock v (115.5734, 86.45793), finite true
+
+DONE: 13 checks passed, 0 failed

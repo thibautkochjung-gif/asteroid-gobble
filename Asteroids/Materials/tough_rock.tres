@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_mat")
-display_name = "Tough rock"
+display_name = "Basalt"
 color = Color(0.29, 0.275, 0.29, 1)
 hardness = 3.0
 is_ore = false

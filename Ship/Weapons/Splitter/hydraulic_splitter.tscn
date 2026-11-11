@@ -1,0 +1,96 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Ship/Weapons/Splitter/hydraulic_splitter.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Ship/Sprites/drill_base.png" id="2_base"]
+[ext_resource type="Texture2D" path="res://Ship/Sprites/drill_link.png" id="3_link"]
+[ext_resource type="Texture2D" path="res://Ship/Sprites/drill_joint.png" id="5_joint"]
+[ext_resource type="Script" path="res://Ship/Weapons/robot_arm.gd" id="6_arm"]
+
+[sub_resource type="Gradient" id="Gradient_smoke"]
+offsets = PackedFloat32Array(0, 0.2, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.55, 1, 1, 1, 0)
+
+[sub_resource type="Curve" id="Curve_smoke_size"]
+_data = [Vector2(0, 0.4), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[node name="HydraulicSplitter" type="Node2D"]
+z_index = 1
+script = ExtResource("1_script")
+
+[node name="Arm" type="Node2D" parent="."]
+script = ExtResource("6_arm")
+head_hitbox = PackedVector2Array(0, -6, 5, -6, 25, -2, 25, 2, 5, 6, 0, 6)
+
+[node name="UpperArm" type="Sprite2D" parent="Arm"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("3_link")
+centered = false
+offset = Vector2(0, -2.5)
+
+[node name="Forearm" type="Sprite2D" parent="Arm"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("3_link")
+centered = false
+offset = Vector2(0, -2.5)
+
+[node name="ElbowJoint" type="Sprite2D" parent="Arm"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("5_joint")
+
+[node name="WristJoint" type="Sprite2D" parent="Arm"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("5_joint")
+
+[node name="Head" type="Node2D" parent="Arm"]
+
+[node name="Look" type="Node2D" parent="Arm/Head"]
+
+[node name="Ram" type="Polygon2D" parent="Arm/Head/Look"]
+color = Color(0.06, 0.055, 0.07, 1)
+polygon = PackedVector2Array(0, -6, 16, -6, 16, 6, 0, 6)
+
+[node name="RamBody" type="Polygon2D" parent="Arm/Head/Look"]
+color = Color(0.83, 0.64, 0.16, 1)
+polygon = PackedVector2Array(2, -4, 14, -4, 14, 4, 2, 4)
+
+[node name="RamRod" type="Polygon2D" parent="Arm/Head/Look"]
+color = Color(0.84, 0.82, 0.77, 1)
+polygon = PackedVector2Array(14, -2, 18, -2, 18, 2, 14, 2)
+
+[node name="Wedge" type="Polygon2D" parent="Arm/Head/Look"]
+color = Color(0.06, 0.055, 0.07, 1)
+polygon = PackedVector2Array(17, -6, 28, 0, 17, 6)
+
+[node name="WedgeFace" type="Polygon2D" parent="Arm/Head/Look"]
+color = Color(0.66, 0.63, 0.59, 1)
+polygon = PackedVector2Array(18, -4, 26, 0, 18, 4)
+
+[node name="Muzzle" type="Marker2D" parent="Arm/Head"]
+position = Vector2(28, 0)
+
+[node name="Base" type="Sprite2D" parent="Arm"]
+texture_filter = 1
+scale = Vector2(2, 2)
+texture = ExtResource("2_base")
+
+[node name="Dust" type="CPUParticles2D" parent="."]
+emitting = false
+color = Color(0.64, 0.61, 0.56, 1)
+amount = 14
+lifetime = 1.2
+local_coords = false
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 8.0
+initial_velocity_max = 20.0
+damping_min = 4.0
+damping_max = 8.0
+scale_amount_min = 4.0
+scale_amount_max = 7.0
+scale_amount_curve = SubResource("Curve_smoke_size")
+color_ramp = SubResource("Gradient_smoke")

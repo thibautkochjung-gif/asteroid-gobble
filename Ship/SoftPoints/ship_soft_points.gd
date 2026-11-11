@@ -5,14 +5,14 @@ extends Node2D
 # Mount N is used with the input action "soft_point_N" (keys 1-4). Tap and hold are worked out by
 # each module (SoftPoint).
 # Other systems go through this node, never through a module type: the thrusters ask it for fuel
-# (drop tanks first), the generator for power (capacitors first), ShipMass for mass, the HUD and
-# the pause menu for text and layout.
+# (drop tanks first), the generator for power (capacitors first), the hardpoints for ammo (ammo
+# boxes first), ShipMass for mass, the HUD and the pause menu for text and layout.
 #
-# Tearing off: the ship's body reports contacts (contact_monitor, turned on here). When a body
-# hits a module's own collision shape, the hit's strength is measured from how much the ship's
-# velocity jumped during that physics step, times its mass: the impulse the ship took. Above the
-# module's break_impulse, the module comes off and floats away (ModuleProp).
-# Thrust alone changes the velocity by a few px/s per step, far below that.
+# Tearing off (off by default, see tear_off_enabled): the ship's body reports contacts
+# (contact_monitor, turned on here). When a body hits a module's own collision shape, the hit's
+# strength is measured from how much the ship's velocity jumped during that physics step, times its
+# mass: the impulse the ship took. Above the module's break_impulse, the module comes off and floats
+# away (ModuleProp). Thrust alone changes the velocity by a few px/s per step, far below that.
 #
 # Recovering: a SpaceProp touching the hull slowly enough calls try_recover(). A ModuleProp goes
 # back on the empty mount closest to where it touched. Any other prop goes back in the nearest
@@ -20,13 +20,14 @@ extends Node2D
 
 signal layout_changed
 signal message(mount_index: int, text: String)
+signal mass_changed # A module's mass jumped (a rock bolted on or let go): ShipMass updates at once, not next frame
 
 const META_KEY: StringName = &"soft_points" # On the ship's body, so props can find this node
 
 # Paths + load(), like the hardpoints and the rooms: no preload cycle with the module scripts.
 const SCENE_PATHS := {
 	SoftPoint.Type.DROP_TANK: "res://Ship/SoftPoints/drop_tank.tscn",
-	SoftPoint.Type.TETHER: "res://Ship/SoftPoints/tether.tscn",
+	SoftPoint.Type.ROCK_BOLTER: "res://Ship/SoftPoints/rock_bolter.tscn",
 	SoftPoint.Type.BEACON_RACK: "res://Ship/SoftPoints/beacon_rack.tscn",
 	SoftPoint.Type.HARPOON: "res://Ship/SoftPoints/harpoon_winch.tscn",
 	SoftPoint.Type.CHARGE_RACK: "res://Ship/SoftPoints/charge_rack.tscn",
@@ -36,15 +37,17 @@ const SCENE_PATHS := {
 	SoftPoint.Type.PROBE_RACK: "res://Ship/SoftPoints/probe_rack.tscn",
 	SoftPoint.Type.FLARE_RACK: "res://Ship/SoftPoints/flare_rack.tscn",
 	SoftPoint.Type.CACHE_BUOY: "res://Ship/SoftPoints/cache_buoy_rack.tscn",
-	SoftPoint.Type.CARGO_CANISTER: "res://Ship/SoftPoints/canister_rack.tscn",
+	SoftPoint.Type.INGOT_CANISTER: "res://Ship/SoftPoints/canister_rack.tscn",
+	SoftPoint.Type.AMMO_BOX: "res://Ship/SoftPoints/ammo_box.tscn",
+	SoftPoint.Type.ORE_CANISTER: "res://Ship/SoftPoints/ore_canister_rack.tscn",
 }
 
 @export var ship: RigidBody2D
-@export var rooms: ShipRooms # The cargo canister takes ore from the cargo rooms and puts it back
+@export var rooms: ShipRooms # The canisters take cargo from the ingot holds and ore bins, and put it back
 @export var generator: Generator # Modules that use power (harpoon reel, clamp) draw from it
-@export var starting_layout: Array[SoftPoint.Type] = [SoftPoint.Type.HARPOON, SoftPoint.Type.DROP_TANK, SoftPoint.Type.TETHER, SoftPoint.Type.BEACON_RACK]
+@export var starting_layout: Array[SoftPoint.Type] = [SoftPoint.Type.HARPOON, SoftPoint.Type.DROP_TANK, SoftPoint.Type.ROCK_BOLTER, SoftPoint.Type.BEACON_RACK]
 @export var recover_speed: float = 40.0 # px/s. Props touching the hull slower than this are taken back
-@export var tear_off_enabled: bool = true
+@export var tear_off_enabled: bool = false # Hard hits no longer tear modules off. Code kept in case a ship gets it back
 
 var mounts: Array[SoftPointMount] = []
 var modules: Array[SoftPoint] = [] # Same index as mounts. null = empty mount
@@ -68,6 +71,9 @@ func _ready() -> void:
 	modules.resize(mounts.size())
 
 	for i in mini(mounts.size(), starting_layout.size()):
+		if starting_layout[i] < 0: # Empty slot (ShipLoadout.EMPTY)
+			continue
+
 		install(i, starting_layout[i])
 
 	_last_velocity = ship.linear_velocity
@@ -276,6 +282,40 @@ func get_power_capacity() -> float:
 	return total
 
 
+# Ammo boxes, in mount order. Returns how many rounds were given.
+func draw_ammo(count: int) -> int:
+	var granted := 0
+
+	for module in modules:
+		if granted >= count:
+			break
+
+		if module != null:
+			granted += module.draw_ammo(count - granted)
+
+	return granted
+
+
+func get_ammo() -> int:
+	var total := 0
+
+	for module in modules:
+		if module != null:
+			total += module.get_ammo()
+
+	return total
+
+
+func get_ammo_capacity() -> int:
+	var total := 0
+
+	for module in modules:
+		if module != null:
+			total += module.get_ammo_capacity()
+
+	return total
+
+
 func restock() -> void:
 	for module in modules:
 		if module != null:
@@ -340,9 +380,9 @@ func _release_as_prop(mount_index: int, push: Vector2, spin: float) -> void:
 	var module := modules[mount_index]
 	var at := module.global_transform
 	var velocity := SoftLink.velocity_at(ship, module.get_mass_center()) + push
-	var mass := module.get_mass()
 
 	_take_off(mount_index)
+	var mass := module.get_mass() # Once off: a rock bolter has let go of its rock by then
 
 	var prop := ModuleProp.new()
 	prop.hold(module)
@@ -424,7 +464,7 @@ func _on_ship_body_shape_entered(_body_rid: RID, _body: Node, _body_shape_index:
 
 
 # shape_find_owner() errors on an index that no longer exists (shapes change between the
-# physics step and this report: the tether rebuilds its shapes, modules come and go).
+# physics step and this report: the rock bolter rebuilds its shapes, modules come and go).
 func _find_shape_owner(shape_index: int) -> int:
 	var count := 0
 

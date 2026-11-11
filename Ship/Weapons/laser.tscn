@@ -6,6 +6,7 @@
 [node name="Laser" type="Node2D"]
 z_index = 1
 script = ExtResource("1_script")
+aim_arc_degrees = 20.0
 
 [node name="Sprite" type="Sprite2D" parent="."]
 texture_filter = 1

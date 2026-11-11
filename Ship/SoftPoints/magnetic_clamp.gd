@@ -2,7 +2,7 @@ class_name MagneticClamp
 extends SoftPoint
 
 # Two magnet pads on the outer face. Tap with a rock against the pads to grip it, tap again to let go.
-# Quicker than the tether, but weaker, and picky:
+# Quicker than the rock bolter, but weaker, and picky:
 # - It only grips a rock that holds ore somewhere inside, seen or not (Asteroid.has_ore_cells).
 #   A refused grip means a barren rock: the clamp doubles as a crude ore detector.
 #   It lets go by itself once the last ore cell is gone.
@@ -104,10 +104,8 @@ func _try_grip() -> void:
 	var best: Asteroid = null
 	var best_distance := reach
 
-	for node in get_tree().get_nodes_in_group(Asteroid.GROUP):
-		var rock := node as Asteroid
-
-		if rock == null or rock.freeze:
+	for rock in Asteroid.find_near(get_tree(), tip, reach):
+		if rock.freeze:
 			continue
 
 		var distance := rock.get_closest_point(tip).distance_to(tip)
