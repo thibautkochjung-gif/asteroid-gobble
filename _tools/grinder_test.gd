@@ -42,7 +42,7 @@ func _ready() -> void:
 		_grinder.feed_acceleration = feed_acceleration
 
 	if remove_smelter:
-		_rooms.install_room(0, Room.Type.CARGO)
+		_rooms.install_room(0, Room.Type.INGOT_HOLD)
 
 	# Doors open, like when the player pushes a chunk in.
 	_hangar.is_open = true
@@ -111,7 +111,7 @@ func _log(elapsed: float) -> void:
 		_write("   chunk centre in ship space: %s" % _player.to_local(_chunk.get_global_center()))
 
 	_write("   ship moved %.1f px from its start, velocity %s" % [_player.global_position.distance_to(_ship_start), _player.linear_velocity])
-	_write("t=%.0fs  hold=%s  grinder=%s  smelter=%d cells  cargo=%.1f" % [elapsed, sizes, _grinder.get_status_text(), _rooms.get_smelter_cells(), _rooms.get_cargo_cells()])
+	_write("t=%.0fs  hold=%s  grinder=%s  smelter=%d cells  ingots=%.1f" % [elapsed, sizes, _grinder.get_status_text(), _rooms.get_smelter_cells(), _rooms.get_ingot_units()])
 
 
 # Ship + every asteroid within 300 px: internal forces can't change this total.

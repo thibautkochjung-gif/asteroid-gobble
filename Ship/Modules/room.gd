@@ -3,14 +3,14 @@ extends Node2D
 
 # Base class for every swappable room.
 # ShipRooms installs a room in a slot and hands it a reference to itself (ship_rooms) and the
-# slot's size, so a room can reach the hangar, the generator or the other rooms without hard-coded
+# slot's size, so a room can reach the hangar or the other rooms without hard-coded
 # paths, and one room scene fits any slot. Each room type works out its capacity from its size.
 # Rooms draw themselves in code, on a grid of 2 px texels to match the pixel art:
 # first the shell (walls, floor), then what's inside (_draw_contents, overridden by each type).
 
 signal contents_changed
 
-enum Type { SMELTER, INGOT_HOLD, FUEL_TANK, AMMO, ORE_BIN } # New types go at the end: scenes store them as numbers
+enum Type { SMELTER, INGOT_HOLD, FUEL_TANK, AMMO, ORE_BIN, FLASH_SMELTER, RECLAIM_SMELTER } # New types go at the end: scenes store them as numbers
 
 const TYPE_NAMES := {
 	Type.SMELTER: "Smelter",
@@ -18,6 +18,8 @@ const TYPE_NAMES := {
 	Type.FUEL_TANK: "Fuel tank",
 	Type.AMMO: "Ammo store",
 	Type.ORE_BIN: "Ore bin",
+	Type.FLASH_SMELTER: "Flash smelter",
+	Type.RECLAIM_SMELTER: "Reclaim smelter",
 }
 
 const TEXEL: float = 2.0 # One art pixel, in px. Everything is drawn on this grid

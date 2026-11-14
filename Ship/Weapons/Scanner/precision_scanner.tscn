@@ -5,6 +5,7 @@
 [node name="PrecisionScanner" type="Node2D"]
 z_index = 1
 script = ExtResource("1_script")
+aim_arc_degrees = 20.0
 precise = true
 max_range = 1500.0
 

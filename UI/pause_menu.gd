@@ -135,7 +135,7 @@ func _build_hardpoint_rows() -> void:
 		row.add_theme_constant_override("separation", 12)
 
 		var name_label := Label.new()
-		name_label.text = "Slot %d (%s)" % [i + 1, _get_binding_text(hardpoints.get_fire_action(i))]
+		name_label.text = "Slot %d (pair %d, %s)" % [i + 1, hardpoints.get_pair(i) + 1, _get_binding_text(hardpoints.get_trigger_action(i))]
 		name_label.custom_minimum_size.x = 200
 
 		var picker := OptionButton.new()

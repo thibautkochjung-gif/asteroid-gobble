@@ -11,9 +11,15 @@ extends RefCounted
 # it. Two rocks must never overlap, even across a sector border: a rock is dropped when it
 # overlaps a rock with a higher priority (the bigger one) among all the planned rocks, dropped or
 # not. Both sectors on each side of a border see the same rocks, so they make the same choice.
+#
+# Where the field sits in the belt changes what it holds (BeltSettings, read through `belt`):
+# deeper means more and bigger rocks, more of them ore-bearing, richer in ore and in rarer ores;
+# richer areas roll more ore clusters and more lone ore-bearing rocks. Without a belt (null),
+# the profile's values apply as they are.
 
 const REACH_SECTORS: int = 2 # Sectors looked at on each side. Holds as long as a formation reaches less than one sector
 const PLACEMENT_TRIES: int = 8 # Spots tried for a formation's rock before it settles on one that overlaps
+const MAX_VALUABLE_CHANCE: float = 0.95 # Deep and rich: some rocks still hold no ore
 
 var profile: AsteroidFieldProfile
 var world_seed: int = 1
@@ -21,6 +27,7 @@ var cell_size: float = 4.0 # Asteroid cell size, px
 var pinned: Array[PinnedFormation] = [] # Formations placed by hand (the starter cluster)
 var clear_center := Vector2.ZERO # No rock within clear_radius of this point (the drop-off spot)
 var clear_radius: float = 0.0
+var belt: BeltSampler # Depth and richness around the drop point. Null: no belt effects
 
 var _density: FastNoiseLite
 
@@ -128,12 +135,16 @@ func _plan_origin(sector: Vector2i) -> Array[Spec]:
 
 	var rect := get_sector_rect(sector)
 	var density := get_density(rect.get_center())
+	var depth := get_depth(rect.get_center())
+	var crowding := belt.settings.get_density_factor(depth) if belt != null else 1.0
+	var size_factor := belt.settings.get_size_factor(depth) if belt != null else 1.0
+	var richness_factor := get_richness_factor(rect.get_center())
 
-	var formation_count := _roll_count(rng, profile.formations_per_sector)
+	var formation_count := _roll_count(rng, profile.formations_per_sector * crowding)
 
 	for i in formation_count:
 		var center := rect.position + Vector2(rng.randf(), rng.randf()) * profile.sector_size
-		var formation := _pick_formation(rng)
+		var formation := _pick_formation(rng, richness_factor)
 		var formation_seed := rng.randi()
 
 		# Kept with a chance equal to the density where it sits: formations thin out toward the
@@ -144,12 +155,12 @@ func _plan_origin(sector: Vector2i) -> Array[Spec]:
 		specs.append_array(_spawn_formation(formation, center, formation_seed, Vector3i(sector.x, sector.y, i)))
 
 	var lone_expected := profile.lone_rocks_per_sector * density + profile.lone_rocks_in_empty_space * (1.0 - density)
-	var lone_count := _roll_count(rng, lone_expected)
+	var lone_count := _roll_count(rng, lone_expected * crowding)
 	var no_ores: Array[int] = []
 
 	for j in lone_count:
 		var position := rect.position + Vector2(rng.randf(), rng.randf()) * profile.sector_size
-		var radius := _roll_size(rng, profile.min_lone_radius, profile.max_lone_radius, profile.lone_size_skew)
+		var radius := _roll_size(rng, profile.min_lone_radius, profile.max_lone_radius * size_factor, profile.lone_size_skew)
 		var drift := Vector2.from_angle(rng.randf() * TAU) * rng.randf() * profile.drift_jitter
 		var id := hash(Vector4i(sector.x, sector.y, -1, j))
 		specs.append(_make_spec(rng, position, radius, id, null, no_ores, drift))
@@ -166,7 +177,8 @@ func _spawn_formation(formation: AsteroidFormation, center: Vector2, formation_s
 	var stretch := sqrt(rng.randf_range(1.0, maxf(formation.max_area_stretch, 1.0)))
 	var axis := rng.randf() * TAU
 	var drift := Vector2.from_angle(rng.randf() * TAU) * rng.randf() * formation.max_drift
-	var ores := _pick_ores(formation, rng)
+	var ores := _pick_ores(formation, rng, get_depth(center))
+	var size_factor := belt.settings.get_size_factor(get_depth(center)) if belt != null else 1.0
 	var inner := 0.0
 
 	if formation.has_core():
@@ -178,7 +190,7 @@ func _spawn_formation(formation: AsteroidFormation, center: Vector2, formation_s
 	var count := rng.randi_range(formation.min_count, formation.max_count)
 
 	for j in count:
-		var radius := _roll_size(rng, formation.min_rock_radius, formation.max_rock_radius, formation.size_skew)
+		var radius := _roll_size(rng, formation.min_rock_radius, formation.max_rock_radius * size_factor, formation.size_skew)
 		var bound := _get_bound(radius)
 		var position := center
 
@@ -224,19 +236,28 @@ func _make_spec(rng: RandomNumberGenerator, position: Vector2, radius: float, id
 	spec.generation_seed = rng.randi() | 1 # Never 0: 0 means "random" to an Asteroid
 
 	var valuable: bool
+	var depth := get_depth(position)
+	var valuable_factor := belt.settings.get_valuable_factor(depth) if belt != null else 1.0
+	var ratio_factor := belt.settings.get_ore_ratio_factor(depth) if belt != null else 1.0
 
 	if ores.is_empty():
-		spec.ore_type = CellMaterials.pick_ore_type(rng)
-		valuable = rng.randf() < profile.lone_valuable_chance
+		spec.ore_type = _pick_ore(rng, CellMaterials.ORES, depth)
+		var chance := profile.lone_valuable_chance * valuable_factor * get_richness_factor(position)
+		valuable = rng.randf() < minf(chance, MAX_VALUABLE_CHANCE)
 
 		if valuable:
-			spec.ore_ratio = rng.randf_range(profile.lone_min_ore_ratio, profile.lone_max_ore_ratio)
+			spec.ore_ratio = rng.randf_range(profile.lone_min_ore_ratio, profile.lone_max_ore_ratio) * ratio_factor
 	else:
-		spec.ore_type = CellMaterials.pick_ore_from(ores, rng)
-		valuable = rng.randf() < formation.valuable_chance
+		spec.ore_type = _pick_ore(rng, ores, depth)
+
+		# The formation's ores were picked at its centre: a rock a bit shallower may find none of them.
+		if spec.ore_type < 0:
+			spec.ore_type = _pick_ore(rng, CellMaterials.ORES, depth)
+
+		valuable = rng.randf() < minf(formation.valuable_chance * valuable_factor, MAX_VALUABLE_CHANCE)
 
 		if valuable:
-			spec.ore_ratio = rng.randf_range(formation.min_ore_ratio, formation.max_ore_ratio)
+			spec.ore_ratio = rng.randf_range(formation.min_ore_ratio, formation.max_ore_ratio) * ratio_factor
 
 	var jitter := Vector2.from_angle(rng.randf() * TAU) * rng.randf() * profile.drift_jitter
 	spec.linear_velocity = drift + jitter
@@ -252,8 +273,9 @@ func _make_spec(rng: RandomNumberGenerator, position: Vector2, radius: float, id
 	return spec
 
 
-# The formation's shared ores: distinct, the common ones more likely. Empty if it has none.
-func _pick_ores(formation: AsteroidFormation, rng: RandomNumberGenerator) -> Array[int]:
+# The formation's shared ores: distinct, the common ones (at this depth) more likely. Empty if it
+# has none. Fewer than asked when too few ores can be found at this depth.
+func _pick_ores(formation: AsteroidFormation, rng: RandomNumberGenerator, depth: float) -> Array[int]:
 	var picked: Array[int] = []
 
 	if not formation.has_shared_ores():
@@ -263,18 +285,55 @@ func _pick_ores(formation: AsteroidFormation, rng: RandomNumberGenerator) -> Arr
 	var count := mini(rng.randi_range(formation.min_ore_types, formation.max_ore_types), left.size())
 
 	for i in count:
-		var ore := CellMaterials.pick_ore_from(left, rng)
+		var ore := _pick_ore(rng, left, depth)
+
+		if ore < 0:
+			break
+
 		picked.append(ore)
 		left.erase(ore)
 
 	return picked
 
 
-func _pick_formation(rng: RandomNumberGenerator) -> AsteroidFormation:
+# One of these ores, weighted for this depth (the materials' spawn weights without a belt).
+# -1 if none of them can be found here.
+func _pick_ore(rng: RandomNumberGenerator, ores: Array[int], depth: float) -> int:
+	if belt == null:
+		return CellMaterials.pick_ore_from(ores, rng)
+
+	var all_weights := belt.settings.get_ore_weights(depth)
+	var weights := PackedFloat32Array()
+	var total := 0.0
+
+	for ore in ores:
+		var weight := all_weights[CellMaterials.ORES.find(ore)]
+		weights.append(weight)
+		total += weight
+
+	if total <= 0.0:
+		rng.randf() # Same number of rolls either way
+		return -1
+
+	return ores[rng.rand_weighted(weights)]
+
+
+# The depth (km) of a point of the field. 0 without a belt.
+func get_depth(point: Vector2) -> float:
+	return belt.get_depth(point) if belt != null else 0.0
+
+
+# Ore clusters and lone ore-bearing rocks × this, from the richness of the belt there.
+func get_richness_factor(point: Vector2) -> float:
+	return belt.settings.get_richness_factor(belt.get_richness(point)) if belt != null else 1.0
+
+
+# Formations with shared ores (ore clusters) come up more often where the belt is rich.
+func _pick_formation(rng: RandomNumberGenerator, richness_factor: float) -> AsteroidFormation:
 	var weights := PackedFloat32Array()
 
 	for formation in profile.formations:
-		weights.append(formation.weight)
+		weights.append(formation.weight * richness_factor if formation.has_shared_ores() else formation.weight)
 
 	if weights.is_empty():
 		rng.randf() # Same number of rolls either way

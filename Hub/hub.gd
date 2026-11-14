@@ -7,16 +7,19 @@ extends Control
 #
 # The ring spins for gravity, but it's drawn still: the sky, the traffic and the hub at the centre
 # (which doesn't spin, so ships can dock at its axis) turn around it instead.
-# Everything is laid out on a 1280x720 stage, scaled to fit the window. The station art is drawn at
+# Everything is laid out on a 1280x720 stage, scaled to fit the window. The stage doesn't clip: when
+# the window isn't 16:9, the sky and the traffic carry on past its edges instead of black bars
+# (the sky is big enough for windows up to about 3.7:1). The station art is drawn at
 # one image pixel per stage pixel, the sky at two (Hub/Art, made by _tools/station_art: regenerate
 # rather than paint over). The art goes through smooth_pixels.gdshader, so its pixels stay even
 # whatever the window size.
 #
-# Debug builds: F9 gives 10,000 cr and every licence, F10 starts a new game.
+# Debug builds: F9 gives 10,000 cr, F10 starts a new game.
 
 const STAGE_SIZE := Vector2(1280.0, 720.0)
 const SKY_SCALE: float = 2.0 # Stage px per sky image pixel. The station art is 1:1
 const CENTER := Vector2(640.0, 360.0)
+const TRAFFIC_OUTER_RADIUS: float = 1350.0 # px from the centre. Traffic reaches this far, for wide windows
 const SPIN_PERIOD: float = 240.0 # s per turn. A real ring this size turns in about a minute: slowed so the screen stays calm
 const PANEL_POSITION := Vector2(816.0, 70.0)
 
@@ -43,7 +46,7 @@ const SPARKS: Array[Vector2] = [Vector2(962, 346), Vector2(1004, 378), Vector2(9
 const AREAS := {
 	&"market": { "name": "COMMODITIES EXCHANGE", "tag": Rect2(24, 112, 330, 58), "anchor": Vector2(404, 247) },
 	&"mechanic": { "name": "MECHANIC", "tag": Rect2(24, 600, 330, 58), "anchor": Vector2(423, 529) },
-	&"shipyard": { "name": "SHIP YARD", "tag": Rect2(930, 470, 330, 58), "anchor": Vector2(954, 360) },
+	&"shipyard": { "name": "SHIPYARD", "tag": Rect2(930, 470, 330, 58), "anchor": Vector2(954, 360) },
 	&"guild": { "name": "MINING GUILD", "tag": Rect2(930, 96, 330, 58), "anchor": Vector2(803, 156) },
 	&"undock": { "name": "UNDOCK", "tag": Rect2(880, 630, 330, 58), "anchor": Vector2(660, 380) },
 }
@@ -84,6 +87,7 @@ func _ready() -> void:
 	GameState.storage_changed.connect(_refresh_status)
 	GameState.prices_changed.connect(_refresh_status)
 	GameState.loadout_changed.connect(_refresh_status)
+	GameState.guild_changed.connect(_refresh_status)
 	_refresh_status()
 
 	if not GameState.last_report.is_empty():
@@ -115,7 +119,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if key.keycode == KEY_F9:
 		GameState.earn(10000)
-		GameState.licence_tier = 3
 		GameState.save_game()
 		_refresh_status()
 	elif key.keycode == KEY_F10:
@@ -139,21 +142,12 @@ func _build_spin() -> void:
 	sky.position = -sky.size * 0.5
 	spin.add_child(sky)
 
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 1
-
-	for i in 14:
-		var holder := Control.new()
-		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var angle := rng.randf() * TAU
-		holder.position = Vector2.from_angle(angle) * rng.randf_range(330.0, 760.0)
-		holder.rotation = rng.randf() * TAU
-		spin.add_child(holder)
-		var ship := _ship_rect([CockpitPalette.PRIMER, CockpitPalette.READY, CockpitPalette.STEEL, CockpitPalette.CREAM, CockpitPalette.RUST][rng.randi() % 5], [8.0, 10.0, 14.0, 22.0][rng.randi() % 4])
-		holder.add_child(ship)
-		var tween := create_tween().set_loops()
-		tween.tween_property(ship, "position:x", 24.0, rng.randf_range(9.0, 20.0)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		tween.tween_property(ship, "position:x", -24.0, rng.randf_range(9.0, 20.0)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	# Two seeds: the inner ships stay where they were before the outer band was added.
+	_add_traffic(1, 14, 330.0, 760.0)
+	# Same density further out. Only seen on windows wider (or taller) than 16:9.
+	var inner_area := 760.0 ** 2 - 330.0 ** 2
+	var outer_area := TRAFFIC_OUTER_RADIUS ** 2 - 760.0 ** 2
+	_add_traffic(2, roundi(14.0 * outer_area / inner_area), 760.0, TRAFFIC_OUTER_RADIUS)
 
 	var hub_core := _texture_rect(HUB_CORE_TEXTURE)
 	hub_core.position = -hub_core.size * 0.5
@@ -175,6 +169,25 @@ func _build_spin() -> void:
 		tween.parallel().tween_property(ship, "position:x", 330.0, 9.0)
 		tween.tween_property(ship, "modulate:a", 0.0, 0.5)
 		tween.tween_interval(9.0 - i * 3.0)
+
+
+# Ships drifting slowly back and forth, scattered between `min_radius` and `max_radius` (px from the centre).
+func _add_traffic(seed_value: int, count: int, min_radius: float, max_radius: float) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+
+	for i in count:
+		var holder := Control.new()
+		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var angle := rng.randf() * TAU
+		holder.position = Vector2.from_angle(angle) * rng.randf_range(min_radius, max_radius)
+		holder.rotation = rng.randf() * TAU
+		spin.add_child(holder)
+		var ship := _ship_rect([CockpitPalette.PRIMER, CockpitPalette.READY, CockpitPalette.STEEL, CockpitPalette.CREAM, CockpitPalette.RUST][rng.randi() % 5], [8.0, 10.0, 14.0, 22.0][rng.randi() % 4])
+		holder.add_child(ship)
+		var tween := create_tween().set_loops()
+		tween.tween_property(ship, "position:x", 24.0, rng.randf_range(9.0, 20.0)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(ship, "position:x", -24.0, rng.randf_range(9.0, 20.0)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 # Nav lights, lift cars and sparks: they belong to the ring, so they don't turn.
@@ -291,7 +304,7 @@ func _build_header() -> void:
 	plate.add_child(_credits_label)
 
 	if OS.is_debug_build():
-		var hint := HubStyle.label("Debug: F9 +10,000 cr and all licences · F10 new game", 13, HubStyle.DIM)
+		var hint := HubStyle.label("Debug: F9 +10,000 cr · F10 new game", 13, HubStyle.DIM)
 		hint.position = Vector2(26.0, 690.0)
 		header.add_child(hint)
 
@@ -313,18 +326,12 @@ func _refresh_status() -> void:
 	elif not GameState.spares.is_empty():
 		hull_text += " · spares in storage"
 
-	var open_fields := 0
-
-	for i in GameState.ECONOMY.fields.size():
-		if GameState.is_field_open(i):
-			open_fields += 1
-
 	_ui[&"market"].status.text = market_text
 	_ui[&"mechanic"].status.text = hull_text
 	_ui[&"mechanic"].status.add_theme_color_override(&"font_color", HubStyle.BAD if GameState.needs_repair() else HubStyle.TEXT)
-	_ui[&"shipyard"].status.text = "Closed for refit"
-	_ui[&"guild"].status.text = "Opening soon"
-	_ui[&"undock"].status.text = "Hub lift · %d fields open" % open_fields
+	_ui[&"shipyard"].status.text = "%d ship%s · flying the %s" % [GameState.ships.size(), "s" if GameState.ships.size() > 1 else "", GameState.get_hull().display_name.trim_prefix("The ")]
+	_ui[&"guild"].status.text = "%d/%d contracts · rank %s" % [GameState.guild.active.size(), Guild.MAX_ACTIVE, GuildPanel.ROMAN[GameState.get_guild_rank() - 1]]
+	_ui[&"undock"].status.text = "Hub lift · mothership turns at %d km" % roundi(GameState.get_next_route().turnaround.x)
 
 
 func _on_hover(id: StringName) -> void:
@@ -360,6 +367,10 @@ func _open(id: StringName) -> void:
 			_show_panel(id, UndockPanel.new())
 		&"mechanic":
 			_show_panel(id, MechanicPanel.new())
+		&"shipyard":
+			_show_panel(id, ShipyardPanel.new())
+		&"guild":
+			_show_panel(id, GuildPanel.new())
 		_:
 			_show_panel(id, ServicePanel.new(id, title))
 

@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Ship/Modules/smelter_room.gd" id="1_script"]
+
+[node name="ReclaimSmelterRoom" type="Node2D"]
+script = ExtResource("1_script")
+room_type = 6
+rock_trace_yield = 0.3
+hot_color = Color(0.95, 0.35, 0.2, 1)
+roller_color = Color(0.36, 0.55, 0.5, 1)

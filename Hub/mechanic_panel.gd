@@ -10,7 +10,7 @@ extends HubPanel
 # old one is sold back when replaced. Hardpoints and soft points move to and from the spares.
 # All the rules (prices, what goes where) are in GameState; this panel only shows and asks.
 
-const KIND_NAMES := ["Room slot", "Hardpoint", "Soft point mount"]
+const KIND_NAMES := ["Room slot", "Hardpoint", "Soft point mount", "Computer"]
 
 var _preview: ShipPreview
 var _slot_list: VBoxContainer
@@ -56,7 +56,7 @@ func _build() -> void:
 	left.add_child(_slot_list)
 	_stats = HubStyle.label("", 15)
 	left.add_child(_stats)
-	left.add_child(HubStyle.label("Computer, generator, grinder and thrusters: one model each for now.", 13, HubStyle.DIM))
+	left.add_child(HubStyle.label("Grinder and thrusters: one model each for now.", 13, HubStyle.DIM))
 
 	var repair_row := HBoxContainer.new()
 	repair_row.add_theme_constant_override(&"separation", 12)
@@ -126,6 +126,7 @@ func _refresh_slot_list() -> void:
 		[GameState.Kind.HARDPOINT, "HARDPOINTS"],
 		[GameState.Kind.SOFT_POINT, "SOFT POINTS"],
 		[GameState.Kind.ROOM, "ROOMS"],
+		[GameState.Kind.COMPUTER, "COMPUTER"],
 	]
 
 	for row_info in rows:
@@ -160,7 +161,7 @@ func _refresh_slot_list() -> void:
 
 func _refresh_stats() -> void:
 	var stats := _preview.get_stats()
-	_stats.text = "Mass %.1f   Ore bins %d cells   Ingots %d u   Smelter %d cells   Fuel %d   Ammo %d   Battery %d" % [stats.mass, stats.ore_bin, stats.ingots, stats.smelter, stats.fuel, stats.ammo, stats.battery]
+	_stats.text = "Mass %.1f   Ore bins %d cells   Ingots %d u   Smelter %d cells   Fuel %d   Ammo %d" % [stats.mass, stats.ore_bin, stats.ingots, stats.smelter, stats.fuel, stats.ammo]
 
 
 func _refresh_options() -> void:
@@ -181,16 +182,21 @@ func _refresh_options() -> void:
 
 	_slot_title.text = "%s: %s" % [title, "empty" if current == ShipLoadout.EMPTY else GameState.get_type_name(_kind, current)]
 
-	if current != ShipLoadout.EMPTY:
+	if GameState.is_slot_fixed(_kind, _index):
+		_slot_title.text += " (built into the hull)"
+		return
+
+	if current != ShipLoadout.EMPTY and _kind != GameState.Kind.COMPUTER: # A ship always has a computer: swap it, don't take it off
 		var take_off := "Sell it back   +%s" % HubStyle.format_credits(GameState.get_module_sell_price(_kind, current, _index)) if _kind == GameState.Kind.ROOM else "Take it off (to the spares)"
 		_add_option(take_off, ShipLoadout.EMPTY)
 
-	for type in GameState.get_type_count(_kind):
+	for type in GameState.get_types(_kind):
 		if type == current:
 			continue
 
 		var cost := GameState.get_fit_cost(_kind, _index, type)
 		var name := GameState.get_type_name(_kind, type)
+
 		var text := ""
 
 		if _kind != GameState.Kind.ROOM and GameState.get_spare_count(_kind, type) > 0:
@@ -220,8 +226,8 @@ func _refresh_spares() -> void:
 		_spares.add_child(HubStyle.label("Nothing in storage.", 15, HubStyle.DIM))
 		return
 
-	for kind in [GameState.Kind.HARDPOINT, GameState.Kind.SOFT_POINT]:
-		for type in GameState.get_type_count(kind):
+	for kind in [GameState.Kind.HARDPOINT, GameState.Kind.SOFT_POINT, GameState.Kind.COMPUTER]:
+		for type in GameState.get_types(kind):
 			var count := GameState.get_spare_count(kind, type)
 
 			if count <= 0:

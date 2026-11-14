@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="BeltSettings" format=3]
+
+[ext_resource type="Script" path="res://Asteroids/Belt/belt_settings.gd" id="1_belt"]
+
+[resource]
+script = ExtResource("1_belt")

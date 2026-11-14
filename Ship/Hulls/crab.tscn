@@ -1,0 +1,675 @@
+[gd_scene format=3 uid="uid://cdado6w4qlntx"]
+
+[ext_resource type="Script" uid="uid://bptvqq2avqmfp" path="res://Ship/Hulls/crab_hull.gd" id="1_hull"]
+[ext_resource type="Script" uid="uid://lf4obdny5ru0" path="res://Camera/camera_2d.gd" id="2_h2yge"]
+[ext_resource type="Script" uid="uid://dic4rxfv0fgrw" path="res://Ship/ship_movement.gd" id="3_h2yge"]
+[ext_resource type="Script" uid="uid://cdrk3iypmqx4t" path="res://Ship/thruster.gd" id="4_1bvp3"]
+[ext_resource type="Shader" uid="uid://ditrbspg2ffrn" path="res://Ship/FX/thruster_flame.gdshader" id="5_5vw27"]
+[ext_resource type="PackedScene" path="res://Ship/FX/main_thruster_fx.tscn" id="6_mainfx"]
+[ext_resource type="PackedScene" path="res://Ship/FX/rcs_thruster_fx.tscn" id="7_rcsfx"]
+[ext_resource type="Script" uid="uid://cf2410v3sy6ht" path="res://Ship/Modules/ship_rooms.gd" id="11_rooms"]
+[ext_resource type="Script" uid="uid://cpdp7oux06caq" path="res://Ship/Modules/hangar.gd" id="12_hangar"]
+[ext_resource type="Script" uid="uid://dk471uvmktvid" path="res://Ship/ship_mass.gd" id="14_mass"]
+[ext_resource type="Script" uid="uid://dyip3xr4wex8e" path="res://Ship/Weapons/ship_hardpoints.gd" id="17_hardpoints"]
+[ext_resource type="Script" uid="uid://bo477dghx4qlq" path="res://Ship/Damage/ship_damage.gd" id="18_d13ii"]
+[ext_resource type="Script" uid="uid://bb65f5454xnyg" path="res://Ship/Modules/room_slot.gd" id="18_slot"]
+[ext_resource type="Script" uid="uid://dbcqd6rlmuwj2" path="res://Ship/Damage/damage_marks.gd" id="19_1u8w0"]
+[ext_resource type="Script" uid="uid://dgr1kdmavcp8q" path="res://Ship/Modules/grinder.gd" id="20_grinder"]
+[ext_resource type="Script" uid="uid://efo0xy1pjp4c" path="res://Ship/Computer/ship_computer.gd" id="20_qsp4k"]
+[ext_resource type="Resource" path="res://Ship/Computer/basic_computer.tres" id="21_kq58d"]
+[ext_resource type="Script" uid="uid://60osxkxd6vqc" path="res://Ship/SoftPoints/ship_soft_points.gd" id="21_softpoints"]
+[ext_resource type="Script" uid="uid://c0h52oxeptltr" path="res://Ship/SoftPoints/soft_point_mount.gd" id="22_mount"]
+[ext_resource type="Script" uid="uid://dvf10avpbpm0w" path="res://Ship/balance_view.gd" id="23_balance"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_acfdu"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 0.97, 0.85, 1)
+shader_parameter/mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/brightness = 1.3
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.32
+shader_parameter/flare = 2.7
+shader_parameter/swell_end = 0.35
+shader_parameter/swell_round = 2.0
+shader_parameter/taper = 0.8
+shader_parameter/min_length = 0.3
+shader_parameter/flicker = 0.12
+shader_parameter/flicker_speed = 20.0
+shader_parameter/scroll_speed = 2.0
+shader_parameter/distortion = 0.35
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_iljm7"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 0.97, 0.85, 1)
+shader_parameter/mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/brightness = 1.3
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.32
+shader_parameter/flare = 2.7
+shader_parameter/swell_end = 0.35
+shader_parameter/swell_round = 2.0
+shader_parameter/taper = 0.8
+shader_parameter/min_length = 0.3
+shader_parameter/flicker = 0.12
+shader_parameter/flicker_speed = 20.0
+shader_parameter/scroll_speed = 2.0
+shader_parameter/distortion = 0.35
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_akkux"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/swell_end = 1.0
+shader_parameter/swell_round = 1.0
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rx477"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/swell_end = 1.0
+shader_parameter/swell_round = 1.0
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_st0ej"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/swell_end = 1.0
+shader_parameter/swell_round = 1.0
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_72rps"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/swell_end = 1.0
+shader_parameter/swell_round = 1.0
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_23lu1"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/swell_end = 1.0
+shader_parameter/swell_round = 1.0
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6iwvj"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/swell_end = 1.0
+shader_parameter/swell_round = 1.0
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8hd4s"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/swell_end = 1.0
+shader_parameter/swell_round = 1.0
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lk1gx"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/swell_end = 1.0
+shader_parameter/swell_round = 1.0
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_oordx"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/swell_end = 1.0
+shader_parameter/swell_round = 1.0
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8lpkg"]
+resource_local_to_scene = true
+shader = ExtResource("5_5vw27")
+shader_parameter/strength = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/burn = 0.0
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/mid_color = Color(0.8, 0.9, 1, 1)
+shader_parameter/outer_color = Color(0.45, 0.55, 0.75, 1)
+shader_parameter/brightness = 0.9
+shader_parameter/cold_size = 1.0
+shader_parameter/hot_mid_color = Color(1, 0.55, 0.15, 1)
+shader_parameter/hot_outer_color = Color(0.85, 0.12, 0.04, 1)
+shader_parameter/nozzle_width = 0.3
+shader_parameter/flare = 2.5
+shader_parameter/swell_end = 1.0
+shader_parameter/swell_round = 1.0
+shader_parameter/taper = 0.5
+shader_parameter/min_length = 0.6
+shader_parameter/flicker = 0.15
+shader_parameter/flicker_speed = 35.0
+shader_parameter/scroll_speed = 4.0
+shader_parameter/distortion = 0.5
+
+[sub_resource type="ConvexPolygonShape2D" id="Shape_left_slab"]
+points = PackedVector2Array(-40, -90, -32, -98, 32, -98, 40, -90, 40, -20, -40, -20)
+
+[sub_resource type="ConvexPolygonShape2D" id="Shape_right_slab"]
+points = PackedVector2Array(-40, 20, 40, 20, 40, 90, 32, 98, -32, 98, -40, 90)
+
+[sub_resource type="ConvexPolygonShape2D" id="Shape_slab_back"]
+points = PackedVector2Array(-40, -20, 10, -20, 10, 20, -40, 20)
+
+[sub_resource type="ConvexPolygonShape2D" id="Shape_tail"]
+points = PackedVector2Array(-74, -16, -40, -16, -40, 16, -74, 16)
+
+[sub_resource type="ConvexPolygonShape2D" id="Shape_left_wingtip"]
+points = PackedVector2Array(-16, -108, 8, -108, 8, -98, -16, -98)
+
+[sub_resource type="ConvexPolygonShape2D" id="Shape_right_wingtip"]
+points = PackedVector2Array(-16, 98, 8, 98, 8, 108, -16, 108)
+
+[sub_resource type="ConvexPolygonShape2D" id="Shape_left_bell"]
+points = PackedVector2Array(-58, -46, -40, -46, -40, -26, -58, -26)
+
+[sub_resource type="ConvexPolygonShape2D" id="Shape_right_bell"]
+points = PackedVector2Array(-58, 26, -40, 26, -40, 46, -58, 46)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_door"]
+size = Vector2(20, 4)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_intake"]
+size = Vector2(30, 40)
+
+[node name="Crab" type="RigidBody2D" unique_id=1767721802]
+mass = 46.0
+gravity_scale = 0.0
+center_of_mass_mode = 1
+center_of_mass = Vector2(-8, 0)
+linear_damp_mode = 1
+angular_damp_mode = 1
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=926833468]
+script = ExtResource("2_h2yge")
+
+[node name="ShipMovement" type="Node" parent="." unique_id=1395499168 node_paths=PackedStringArray("thruster_group", "fuel_source", "drop_tanks", "computer")]
+script = ExtResource("3_h2yge")
+thruster_group = NodePath("../Thrusters")
+fuel_source = NodePath("../Rooms")
+drop_tanks = NodePath("../SoftPoints")
+computer = NodePath("../Computer")
+
+[node name="Thrusters" type="Node2D" parent="." unique_id=783670236]
+
+[node name="Main Left" type="Node2D" parent="Thrusters" unique_id=1874930579 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(-58, -36)
+rotation = 3.1415927
+script = ExtResource("4_1bvp3")
+thrust_force = 3800.0
+fuel_per_second = 0.5
+roles = Array[StringName]([&"forward_thrust"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+toughness = 3.6
+
+[node name="FX" parent="Thrusters/Main Left" unique_id=994177586 instance=ExtResource("6_mainfx")]
+material = SubResource("ShaderMaterial_acfdu")
+
+[node name="Main Right" type="Node2D" parent="Thrusters" unique_id=1953515219 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(-58, 36)
+rotation = 3.1415927
+script = ExtResource("4_1bvp3")
+thrust_force = 3800.0
+fuel_per_second = 0.5
+roles = Array[StringName]([&"forward_thrust"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+toughness = 3.6
+
+[node name="FX" parent="Thrusters/Main Right" unique_id=264545848 instance=ExtResource("6_mainfx")]
+material = SubResource("ShaderMaterial_iljm7")
+
+[node name="Front Left" type="Node2D" parent="Thrusters" unique_id=1942433342 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(40, -56)
+script = ExtResource("4_1bvp3")
+thrust_force = 900.0
+roles = Array[StringName]([&"backward_thrust"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+
+[node name="FX" parent="Thrusters/Front Left" unique_id=1631331822 instance=ExtResource("7_rcsfx")]
+material = SubResource("ShaderMaterial_akkux")
+
+[node name="Front Right" type="Node2D" parent="Thrusters" unique_id=2047497031 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(40, 56)
+script = ExtResource("4_1bvp3")
+thrust_force = 900.0
+roles = Array[StringName]([&"backward_thrust"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+
+[node name="FX" parent="Thrusters/Front Right" unique_id=237265485 instance=ExtResource("7_rcsfx")]
+material = SubResource("ShaderMaterial_rx477")
+
+[node name="Left Forward" type="Node2D" parent="Thrusters" unique_id=907561429 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(30, -98)
+rotation = 4.712389
+script = ExtResource("4_1bvp3")
+thrust_force = 1300.0
+roles = Array[StringName]([&"right_turn", &"right_thrust"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+
+[node name="FX" parent="Thrusters/Left Forward" unique_id=445901325 instance=ExtResource("7_rcsfx")]
+material = SubResource("ShaderMaterial_st0ej")
+
+[node name="Right Forward" type="Node2D" parent="Thrusters" unique_id=2072233286 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(30, 98)
+rotation = 1.5707964
+script = ExtResource("4_1bvp3")
+thrust_force = 1300.0
+roles = Array[StringName]([&"left_turn", &"left_thrust"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+
+[node name="FX" parent="Thrusters/Right Forward" unique_id=1581964567 instance=ExtResource("7_rcsfx")]
+material = SubResource("ShaderMaterial_72rps")
+
+[node name="Left Back" type="Node2D" parent="Thrusters" unique_id=690643166 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(-68, -16)
+rotation = 4.712389
+script = ExtResource("4_1bvp3")
+thrust_force = 900.0
+roles = Array[StringName]([&"left_turn", &"right_thrust"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+
+[node name="FX" parent="Thrusters/Left Back" unique_id=1477670853 instance=ExtResource("7_rcsfx")]
+material = SubResource("ShaderMaterial_23lu1")
+
+[node name="Right Back" type="Node2D" parent="Thrusters" unique_id=2055933336 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(-68, 16)
+rotation = 1.5707964
+script = ExtResource("4_1bvp3")
+thrust_force = 900.0
+roles = Array[StringName]([&"right_turn", &"left_thrust"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+
+[node name="FX" parent="Thrusters/Right Back" unique_id=109736463 instance=ExtResource("7_rcsfx")]
+material = SubResource("ShaderMaterial_6iwvj")
+
+[node name="Left Tip Aft" type="Node2D" parent="Thrusters" unique_id=597072107 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(-16, -103)
+rotation = 3.1415927
+script = ExtResource("4_1bvp3")
+thrust_force = 300.0
+roles = Array[StringName]([&"right_turn"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+
+[node name="FX" parent="Thrusters/Left Tip Aft" unique_id=827554091 instance=ExtResource("7_rcsfx")]
+material = SubResource("ShaderMaterial_8hd4s")
+
+[node name="Left Tip Fore" type="Node2D" parent="Thrusters" unique_id=725703210 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(8, -103)
+script = ExtResource("4_1bvp3")
+thrust_force = 300.0
+roles = Array[StringName]([&"left_turn"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+
+[node name="FX" parent="Thrusters/Left Tip Fore" unique_id=664185141 instance=ExtResource("7_rcsfx")]
+material = SubResource("ShaderMaterial_lk1gx")
+
+[node name="Right Tip Aft" type="Node2D" parent="Thrusters" unique_id=1585002549 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(-16, 103)
+rotation = 3.1415927
+script = ExtResource("4_1bvp3")
+thrust_force = 300.0
+roles = Array[StringName]([&"left_turn"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+
+[node name="FX" parent="Thrusters/Right Tip Aft" unique_id=1354056939 instance=ExtResource("7_rcsfx")]
+material = SubResource("ShaderMaterial_oordx")
+
+[node name="Right Tip Fore" type="Node2D" parent="Thrusters" unique_id=1793529117 node_paths=PackedStringArray("ship", "fx")]
+position = Vector2(8, 103)
+script = ExtResource("4_1bvp3")
+thrust_force = 300.0
+roles = Array[StringName]([&"right_turn"])
+ship = NodePath("../..")
+fx = NodePath("FX")
+
+[node name="FX" parent="Thrusters/Right Tip Fore" unique_id=186228304 instance=ExtResource("7_rcsfx")]
+material = SubResource("ShaderMaterial_8lpkg")
+
+[node name="Hull" type="Node2D" parent="." unique_id=1100118786 node_paths=PackedStringArray("intake", "hardpoints", "main_engines", "rooms", "hangar", "thrusters")]
+script = ExtResource("1_hull")
+intake = NodePath("../Hangar/Intake")
+hardpoints = NodePath("../Hardpoints")
+main_engines = [NodePath("../Thrusters/Main Left"), NodePath("../Thrusters/Main Right")]
+seam_xs = PackedFloat32Array(-2)
+rooms = NodePath("../Rooms")
+hangar = NodePath("../Hangar")
+thrusters = NodePath("../Thrusters")
+grime_seed = 11
+berth_crosswise = true
+
+[node name="LeftSlabCollision" type="CollisionShape2D" parent="." unique_id=777049772]
+shape = SubResource("Shape_left_slab")
+
+[node name="RightSlabCollision" type="CollisionShape2D" parent="." unique_id=63760773]
+shape = SubResource("Shape_right_slab")
+
+[node name="SlabBackCollision" type="CollisionShape2D" parent="." unique_id=1891199249]
+shape = SubResource("Shape_slab_back")
+
+[node name="TailCollision" type="CollisionShape2D" parent="." unique_id=865328342]
+shape = SubResource("Shape_tail")
+
+[node name="LeftWingtipCollision" type="CollisionShape2D" parent="." unique_id=1515885174]
+shape = SubResource("Shape_left_wingtip")
+
+[node name="RightWingtipCollision" type="CollisionShape2D" parent="." unique_id=1546954962]
+shape = SubResource("Shape_right_wingtip")
+
+[node name="LeftBellCollision" type="CollisionShape2D" parent="." unique_id=1459707973]
+shape = SubResource("Shape_left_bell")
+
+[node name="RightBellCollision" type="CollisionShape2D" parent="." unique_id=1977018148]
+shape = SubResource("Shape_right_bell")
+
+[node name="LeftDoorCollision" type="CollisionShape2D" parent="." unique_id=1100142543]
+position = Vector2(40, -10)
+rotation = 1.5707964
+shape = SubResource("RectangleShape2D_door")
+
+[node name="RightDoorCollision" type="CollisionShape2D" parent="." unique_id=1100142556]
+position = Vector2(40, 10)
+rotation = -1.5707964
+shape = SubResource("RectangleShape2D_door")
+
+[node name="Rooms" type="Node2D" parent="." unique_id=1100158381 node_paths=PackedStringArray("ship")]
+script = ExtResource("11_rooms")
+ship = NodePath("..")
+starting_layout = Array[int]([4, 4, 4, 2])
+
+[node name="Slot1" type="Marker2D" parent="Rooms" unique_id=1100166300]
+position = Vector2(0, -59)
+script = ExtResource("18_slot")
+size = Vector2(68, 62)
+
+[node name="Slot2" type="Marker2D" parent="Rooms" unique_id=1100174219]
+position = Vector2(0, 59)
+script = ExtResource("18_slot")
+size = Vector2(68, 62)
+
+[node name="Slot3" type="Marker2D" parent="Rooms" unique_id=1100182138]
+position = Vector2(-14, 0)
+script = ExtResource("18_slot")
+size = Vector2(40, 36)
+
+[node name="Slot4" type="Marker2D" parent="Rooms" unique_id=552306340]
+position = Vector2(-57, 0)
+script = ExtResource("18_slot")
+size = Vector2(26, 26)
+
+[node name="Hangar" type="Node2D" parent="." unique_id=1100190057 node_paths=PackedStringArray("ship", "rooms", "intake", "left_door_collision", "right_door_collision")]
+script = ExtResource("12_hangar")
+ship = NodePath("..")
+rooms = NodePath("../Rooms")
+intake = NodePath("Intake")
+left_door_collision = NodePath("../LeftDoorCollision")
+right_door_collision = NodePath("../RightDoorCollision")
+door_line_x = 40.0
+doorway_half_width = 20.0
+
+[node name="Intake" type="Area2D" parent="Hangar" unique_id=1100197976]
+position = Vector2(25, 0)
+collision_layer = 0
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hangar/Intake" unique_id=1100205895]
+shape = SubResource("RectangleShape2D_intake")
+
+[node name="Grinder" type="Node2D" parent="." unique_id=1100260001 node_paths=PackedStringArray("ship", "hangar")]
+script = ExtResource("20_grinder")
+ship = NodePath("..")
+hangar = NodePath("../Hangar")
+
+[node name="Hardpoints" type="Node2D" parent="." unique_id=1100213814 node_paths=PackedStringArray("ship", "hangar", "rooms", "soft_points")]
+script = ExtResource("17_hardpoints")
+ship = NodePath("..")
+hangar = NodePath("../Hangar")
+rooms = NodePath("../Rooms")
+soft_points = NodePath("../SoftPoints")
+
+[node name="LeftHardpoint" type="Node2D" parent="Hardpoints" unique_id=1100221733]
+position = Vector2(48, -36)
+
+[node name="RightHardpoint" type="Node2D" parent="Hardpoints" unique_id=1100237571]
+position = Vector2(48, 36)
+
+[node name="LeftOuterHardpoint" type="Node2D" parent="Hardpoints" unique_id=1400000001]
+position = Vector2(48, -78)
+
+[node name="RightOuterHardpoint" type="Node2D" parent="Hardpoints" unique_id=1400000002]
+position = Vector2(48, 78)
+
+[node name="SoftPoints" type="Node2D" parent="." unique_id=1300000001 node_paths=PackedStringArray("ship", "rooms")]
+script = ExtResource("21_softpoints")
+ship = NodePath("..")
+rooms = NodePath("../Rooms")
+
+[node name="LeftFore" type="Marker2D" parent="SoftPoints" unique_id=1300000002]
+position = Vector2(20, -98)
+rotation = -1.5707964
+script = ExtResource("22_mount")
+display_name = "Left fore"
+
+[node name="LeftAft" type="Marker2D" parent="SoftPoints" unique_id=1300000003]
+position = Vector2(-28, -98)
+rotation = -1.5707964
+script = ExtResource("22_mount")
+display_name = "Left aft"
+
+[node name="RightFore" type="Marker2D" parent="SoftPoints" unique_id=1300000004]
+position = Vector2(20, 98)
+rotation = 1.5707964
+script = ExtResource("22_mount")
+display_name = "Right fore"
+
+[node name="RightAft" type="Marker2D" parent="SoftPoints" unique_id=1300000005]
+position = Vector2(-28, 98)
+rotation = 1.5707964
+script = ExtResource("22_mount")
+display_name = "Right aft"
+
+[node name="ShipMass" type="Node" parent="." unique_id=1100245490 node_paths=PackedStringArray("ship", "rooms", "soft_points", "hardpoints")]
+script = ExtResource("14_mass")
+ship = NodePath("..")
+rooms = NodePath("../Rooms")
+soft_points = NodePath("../SoftPoints")
+hardpoints = NodePath("../Hardpoints")
+hull_mass = 46.0
+hull_center_of_mass = Vector2(-8, 0)
+
+[node name="BalanceView" type="Node2D" parent="." unique_id=1300000010 node_paths=PackedStringArray("ship", "thrusters", "ship_mass", "soft_points")]
+script = ExtResource("23_balance")
+ship = NodePath("..")
+thrusters = NodePath("../Thrusters")
+ship_mass = NodePath("../ShipMass")
+soft_points = NodePath("../SoftPoints")
+
+[node name="ShipDamage" type="Node" parent="." unique_id=1734720408 node_paths=PackedStringArray("ship")]
+script = ExtResource("18_d13ii")
+ship = NodePath("..")
+
+[node name="DamageMarks" type="Node2D" parent="." unique_id=778572806 node_paths=PackedStringArray("ship_damage")]
+script = ExtResource("19_1u8w0")
+ship_damage = NodePath("../ShipDamage")
+
+[node name="Computer" type="Node" parent="." unique_id=1083404003 node_paths=PackedStringArray("ship")]
+script = ExtResource("20_qsp4k")
+ship = NodePath("..")
+module = ExtResource("21_kq58d")

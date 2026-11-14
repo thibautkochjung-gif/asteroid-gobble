@@ -31,7 +31,6 @@ const CONE_RANGE_STEPS: int = 12 # Cone drawing: bands along
 @export var cone_degrees: float = 25.0 # Full width
 @export var max_closing_speed: float = 60.0 # px/s. Faster than this, the beam stops adding speed
 @export var max_total_share: float = 2.0 # With many bodies, the total force stays under this many single pulls
-@export var power_per_second: float = 3.0 # Short on power or damaged: less force
 
 @export_group("Smart")
 @export var guide_into_hangar: bool = false
@@ -96,7 +95,7 @@ func _physics_process(delta: float) -> void:
 	if not is_firing and held.is_empty():
 		return
 
-	var strength := draw_power(power_per_second * delta) * get_performance()
+	var strength := get_performance() # Damaged: less force
 
 	if is_firing:
 		caught = _find_in_cone()

@@ -4,7 +4,8 @@ extends Node
 # Collision damage: the hull's points, and wear on the parts close to each impact.
 #
 # Impacts: the ship's body reports its contacts (contact_monitor). A body that touches the ship now
-# but didn't on the last frame is one impact. Contacts on the arm tools' shapes don't count. A body that stays in contact (resting, scraping,
+# but didn't on the last frame is one impact. Contacts on the arm tools' shapes don't count, and
+# contacts on a shield's shapes (DeflectorProw) go to its absorb_impact() instead. A body that stays in contact (resting, scraping,
 # being pushed) does no more damage.
 #
 # Impact energy, the kinetic energy the hit can take out of the two bodies:
@@ -55,6 +56,7 @@ var _ship_spin: float = 0.0
 var _body_velocities: Dictionary[int, Vector2] = {} # Instance id -> velocity before the step
 var _body_spins: Dictionary[int, float] = {}
 var _touching: Dictionary[int, bool] = {} # Instance ids of the bodies in contact on the last frame
+var _shield_touching: Dictionary[int, bool] = {} # Same, for the bodies on a shield (absorb_impact())
 var _parts: Array[Node] = [] # get_parts() result for _parts_frame
 var _parts_frame: int = -1
 var _nearby: Dictionary[RigidBody2D, bool] = {} # Bodies within record_radius, kept by _nearby_area's signals
@@ -153,13 +155,31 @@ func repair_all() -> void:
 
 func _detect_impacts(state: PhysicsDirectBodyState2D) -> void:
 	var touching: Dictionary[int, bool] = {}
+	var shield_touching: Dictionary[int, bool] = {}
 
 	for i in state.get_contact_count():
 		var collider_id := state.get_contact_collider_id(i)
+		var shape_owner := _get_contact_owner(state, i)
 
 		# Arm tools (drill, grabber, splitter) are made to touch rock: a rock on one isn't a hit.
 		# It only counts once it touches the hull itself.
-		if _is_on_arm(state, i):
+		if shape_owner is RobotArm:
+			continue
+
+		# Shields (the deflector prow) take the hit in the hull's place: absorb_impact() decides what
+		# it does to them. Tracked apart, so a rock that slides off a shield onto the hull still hits it.
+		if shape_owner != null and shape_owner.has_method(&"absorb_impact"):
+			if shield_touching.has(collider_id):
+				continue
+
+			shield_touching[collider_id] = true
+
+			if not _shield_touching.has(collider_id) and not is_destroyed:
+				var impact := _measure_impact(state, i)
+
+				if not impact.is_empty():
+					shape_owner.call(&"absorb_impact", impact)
+
 			continue
 
 		# Several contact points on one body make one hit, measured at the first of them.
@@ -172,15 +192,35 @@ func _detect_impacts(state: PhysicsDirectBodyState2D) -> void:
 			_on_impact(state, i)
 
 	_touching = touching
+	_shield_touching = shield_touching
 
 
-# True if the ship's side of this contact is one of a RobotArm's shapes (its links and head).
-func _is_on_arm(state: PhysicsDirectBodyState2D, contact: int) -> bool:
+# What owns the ship's side of this contact: a hull CollisionShape2D, a RobotArm (its links and
+# head), a DeflectorProw...
+func _get_contact_owner(state: PhysicsDirectBodyState2D, contact: int) -> Object:
 	var owner_id := ship.shape_find_owner(state.get_contact_local_shape(contact))
-	return ship.shape_owner_get_owner(owner_id) is RobotArm
+	return ship.shape_owner_get_owner(owner_id)
 
 
 func _on_impact(state: PhysicsDirectBodyState2D, contact: int) -> void:
+	var impact := _measure_impact(state, contact)
+
+	if impact.is_empty():
+		return
+
+	var energy: float = impact.energy
+	_damage_parts(energy, impact.point)
+	_damage_hull(energy)
+	_shake_camera(energy)
+
+	if log_impacts:
+		print("Impact: %.0f px/s, energy %.0f = %.1f%% of the hull. Hull at %.0f%%" % [impact.speed, energy, 100.0 * energy / max_hull, 100.0 * get_hull_ratio()])
+
+
+# One contact, from the velocities before the hit: { speed, energy, other_mass, point }.
+# other_mass is INF for anything immovable (static, frozen, the mothership).
+# Empty if the bodies closed too slowly for a hit.
+func _measure_impact(state: PhysicsDirectBodyState2D, contact: int) -> Dictionary:
 	var collider_id := state.get_contact_collider_id(contact)
 	var point := state.get_contact_local_position(contact) # Global, despite the name
 	var normal := state.get_contact_local_normal(contact)
@@ -189,6 +229,7 @@ func _on_impact(state: PhysicsDirectBodyState2D, contact: int) -> void:
 	var ship_velocity := _get_velocity_at(_ship_velocity, _ship_spin, ship_offset)
 	var inverse_mass := _get_inverse_mass_at(state, ship_offset, normal)
 	var other_velocity := Vector2.ZERO
+	var other_mass := INF
 	var collider := state.get_contact_collider_object(contact)
 	var body := collider as RigidBody2D
 	var mothership := collider as Mothership
@@ -203,21 +244,21 @@ func _on_impact(state: PhysicsDirectBodyState2D, contact: int) -> void:
 		var linear: Vector2 = _body_velocities.get(collider_id, body.linear_velocity)
 		var spin: float = _body_spins.get(collider_id, body.angular_velocity)
 		other_velocity = _get_velocity_at(linear, spin, other_offset)
+		other_mass = body.mass
 		inverse_mass += _get_inverse_mass_at(other_state, other_offset, normal)
 
 	# New contact: the bodies were closing in, whichever way the normal points.
 	var speed := absf((ship_velocity - other_velocity).dot(normal))
 
 	if speed < min_impact_speed or inverse_mass <= 0.0:
-		return
+		return {}
 
-	var energy := 0.5 * speed * speed / inverse_mass
-	_damage_parts(energy, point)
-	_damage_hull(energy)
-	_shake_camera(energy)
-
-	if log_impacts:
-		print("Impact: %.0f px/s, energy %.0f = %.1f%% of the hull. Hull at %.0f%%" % [speed, energy, 100.0 * energy / max_hull, 100.0 * get_hull_ratio()])
+	return {
+		"speed": speed,
+		"energy": 0.5 * speed * speed / inverse_mass,
+		"other_mass": other_mass,
+		"point": point,
+	}
 
 
 func _damage_hull(energy: float) -> void:

@@ -16,9 +16,6 @@ enum State { IDLE, CHARGING, FIRING }
 @export var full_charge_time: float = 4.0 # Extra charge after windup_time to reach max_penetration
 @export var cooldown_time: float = 4.0
 
-@export_group("Power")
-@export var charge_power: float = 6.0 # Drawn per second while charging. Short on power = slower charge
-
 @export_group("Visuals")
 @export var beam_width: float = 2.0 # Same for the preview and the shot
 @export var preview_color: Color = Color(0.3, 0.6, 1.0, 0.4) # Blue: still charging
@@ -52,7 +49,7 @@ func _process(delta: float) -> void:
 	if state != State.CHARGING:
 		return
 
-	charge_time += delta * draw_power(charge_power * delta) * get_performance() # Damaged: slower charge
+	charge_time += delta * get_performance() # Damaged: slower charge
 	_set_beam(_get_preview_length(_get_hits(1)), _get_preview_color())
 
 	if Input.is_action_just_released(fire_action):

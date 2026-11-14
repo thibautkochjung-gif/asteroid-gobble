@@ -2,11 +2,10 @@ class_name ShipSoftPoints
 extends Node2D
 
 # Owns the soft point mounts (the SoftPointMount children) and what's bolted on them.
-# Mount N is used with the input action "soft_point_N" (keys 1-4). Tap and hold are worked out by
+# Mount N is used with the input action "soft_point_N" (keys 1-6). Tap and hold are worked out by
 # each module (SoftPoint).
 # Other systems go through this node, never through a module type: the thrusters ask it for fuel
-# (drop tanks first), the generator for power (capacitors first), the hardpoints for ammo (ammo
-# boxes first), ShipMass for mass, the HUD and the pause menu for text and layout.
+# (drop tanks first), the hardpoints for ammo (ammo boxes first), ShipMass for mass, the HUD and the pause menu for text and layout.
 #
 # Tearing off (off by default, see tear_off_enabled): the ship's body reports contacts
 # (contact_monitor, turned on here). When a body hits a module's own collision shape, the hit's
@@ -33,7 +32,6 @@ const SCENE_PATHS := {
 	SoftPoint.Type.CHARGE_RACK: "res://Ship/SoftPoints/charge_rack.tscn",
 	SoftPoint.Type.MAGNETIC_CLAMP: "res://Ship/SoftPoints/magnetic_clamp.tscn",
 	SoftPoint.Type.BALLAST: "res://Ship/SoftPoints/ballast_pod.tscn",
-	SoftPoint.Type.CAPACITOR: "res://Ship/SoftPoints/capacitor_pack.tscn",
 	SoftPoint.Type.PROBE_RACK: "res://Ship/SoftPoints/probe_rack.tscn",
 	SoftPoint.Type.FLARE_RACK: "res://Ship/SoftPoints/flare_rack.tscn",
 	SoftPoint.Type.CACHE_BUOY: "res://Ship/SoftPoints/cache_buoy_rack.tscn",
@@ -44,7 +42,6 @@ const SCENE_PATHS := {
 
 @export var ship: RigidBody2D
 @export var rooms: ShipRooms # The canisters take cargo from the ingot holds and ore bins, and put it back
-@export var generator: Generator # Modules that use power (harpoon reel, clamp) draw from it
 @export var starting_layout: Array[SoftPoint.Type] = [SoftPoint.Type.HARPOON, SoftPoint.Type.DROP_TANK, SoftPoint.Type.ROCK_BOLTER, SoftPoint.Type.BEACON_RACK]
 @export var recover_speed: float = 40.0 # px/s. Props touching the hull slower than this are taken back
 @export var tear_off_enabled: bool = false # Hard hits no longer tear modules off. Code kept in case a ship gets it back
@@ -230,54 +227,6 @@ func get_fuel_capacity() -> float:
 	for module in modules:
 		if module != null:
 			total += module.get_fuel_capacity()
-
-	return total
-
-
-# Capacitors, in mount order. Returns how much power was given.
-func draw_power(amount: float) -> float:
-	var granted := 0.0
-
-	for module in modules:
-		if granted >= amount:
-			break
-
-		if module != null:
-			granted += module.draw_power(amount - granted)
-
-	return granted
-
-
-# Generator surplus. Returns how much was stored.
-func store_power(amount: float) -> float:
-	var stored := 0.0
-
-	for module in modules:
-		if stored >= amount:
-			break
-
-		if module != null:
-			stored += module.store_power(amount - stored)
-
-	return stored
-
-
-func get_power() -> float:
-	var total := 0.0
-
-	for module in modules:
-		if module != null:
-			total += module.get_power()
-
-	return total
-
-
-func get_power_capacity() -> float:
-	var total := 0.0
-
-	for module in modules:
-		if module != null:
-			total += module.get_power_capacity()
 
 	return total
 

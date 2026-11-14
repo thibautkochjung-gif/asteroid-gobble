@@ -4,11 +4,13 @@ extends Control
 
 # The big push-button of one hardpoint, sized to its socket in the panel art (76 x 60).
 # Yellow when ready, brighter while firing, dark and refilling from the bottom during a cooldown.
+# Ships with more than two hardpoints split the sockets: the buttons are then short (COMPACT_HEIGHT
+# or less) and show the title and the key on one row.
+# Hardpoints work in pairs: the buttons of the pairs that aren't active are drawn unlit (selected = false).
 
 enum State { EMPTY, READY, FIRING, COOLDOWN, BROKEN }
 
-const FACE := Rect2(3.0, 3.0, 70.0, 50.0)
-const BASE := Rect2(3.0, 6.0, 70.0, 52.0) # The button's side, showing under the face
+const COMPACT_HEIGHT: float = 40.0
 
 @export var state: State = State.READY:
 	set(value):
@@ -39,6 +41,21 @@ const BASE := Rect2(3.0, 6.0, 70.0, 52.0) # The button's side, showing under the
 		key_text = value
 		queue_redraw()
 
+@export var selected: bool = true:
+	set(value):
+		if selected == value:
+			return
+
+		selected = value
+		queue_redraw()
+@export var pair_marker: bool = false: # Ships with several pairs: a lit strip under the active pair
+	set(value):
+		if pair_marker == value:
+			return
+
+		pair_marker = value
+		queue_redraw()
+
 @export_group("Text")
 @export var title_font: Font
 @export var key_font: Font
@@ -51,6 +68,8 @@ func _ready() -> void:
 
 
 func _draw() -> void:
+	var face := Rect2(3.0, 3.0, size.x - 6.0, size.y - 10.0)
+	var base := Rect2(3.0, 6.0, size.x - 6.0, size.y - 8.0) # The button's side, showing under the face
 	var face_color := CockpitPalette.YELLOW
 	var base_color := CockpitPalette.YELLOW_DARK
 	var text_color := CockpitPalette.INK_DARK
@@ -61,7 +80,7 @@ func _draw() -> void:
 	match state:
 		State.FIRING:
 			face_color = CockpitPalette.YELLOW_LIT
-			draw_circle(FACE.get_center(), 46.0, Color(CockpitPalette.YELLOW_LIT, 0.12))
+			draw_circle(face.get_center(), face.size.x * 0.65, Color(CockpitPalette.YELLOW_LIT, 0.12))
 		State.COOLDOWN:
 			face_color = CockpitPalette.BUTTON_DARK
 			base_color = CockpitPalette.OUTLINE
@@ -82,17 +101,38 @@ func _draw() -> void:
 			shine = 0.06
 			shown_title = "EMPTY"
 
-	draw_rect(BASE, base_color)
-	draw_rect(FACE, face_color)
+	if not selected:
+		# Unlit: the pair isn't active, LMB and RMB fire the other one
+		face_color = face_color.lerp(CockpitPalette.OUTLINE, 0.6)
+		base_color = base_color.lerp(CockpitPalette.OUTLINE, 0.6)
+		text_color = text_color.lerp(CockpitPalette.CREAM, 0.35)
+		text_color.a = 0.6
+		shadow = Color.TRANSPARENT
+		shine *= 0.3
+
+	draw_rect(base, base_color)
+	draw_rect(face, face_color)
 
 	if state == State.COOLDOWN:
-		var refill_height := FACE.size.y * (1.0 - cooldown)
-		draw_rect(Rect2(FACE.position.x, FACE.end.y - refill_height, FACE.size.x, refill_height), CockpitPalette.PRIMER)
+		var refill_height := face.size.y * (1.0 - cooldown)
+		draw_rect(Rect2(face.position.x, face.end.y - refill_height, face.size.x, refill_height), CockpitPalette.PRIMER)
 
-	draw_rect(Rect2(FACE.position + Vector2(4.0, 2.0), Vector2(FACE.size.x - 8.0, 3.0)), Color(1.0, 1.0, 1.0, shine))
+	draw_rect(Rect2(face.position + Vector2(4.0, 2.0), Vector2(face.size.x - 8.0, 3.0)), Color(1.0, 1.0, 1.0, shine))
 
-	var title_rect := Rect2(FACE.position.x + 3.0, FACE.position.y + 8.0, FACE.size.x - 6.0, 16.0)
-	var key_rect := Rect2(FACE.position.x + 3.0, FACE.position.y + 27.0, FACE.size.x - 6.0, 18.0)
+	if pair_marker and selected:
+		draw_rect(Rect2(base.position.x, base.end.y, base.size.x, 2.0), CockpitPalette.YELLOW_LIT)
+
+	if size.y <= COMPACT_HEIGHT:
+		# One row: the title on the left two thirds, the key on the right
+		var split := face.size.x * 0.64
+		var title_rect := Rect2(face.position.x + 2.0, face.position.y + 3.0, split - 2.0, face.size.y - 4.0)
+		var key_rect := Rect2(face.position.x + split, face.position.y + 3.0, face.size.x - split - 2.0, face.size.y - 4.0)
+		HudText.draw_centered(self, _font_or_default(title_font), shown_title, title_rect, title_size - 3, text_color, shadow)
+		HudText.draw_centered(self, _font_or_default(key_font), key_text, key_rect, title_size - 2, text_color, shadow)
+		return
+
+	var title_rect := Rect2(face.position.x + 3.0, face.position.y + 8.0, face.size.x - 6.0, 16.0)
+	var key_rect := Rect2(face.position.x + 3.0, face.position.y + 27.0, face.size.x - 6.0, 18.0)
 	HudText.draw_centered(self, _font_or_default(title_font), shown_title, title_rect, title_size, text_color, shadow)
 	HudText.draw_centered(self, _font_or_default(key_font), key_text, key_rect, key_size, text_color, shadow)
 

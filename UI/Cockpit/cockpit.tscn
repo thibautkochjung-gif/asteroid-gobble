@@ -127,7 +127,7 @@ unique_name_in_owner = true
 script = ExtResource("8_tile")
 text = "IMPACT"
 
-[node name="LowPowerTile" type="Control" parent="."]
+[node name="CargoTile" type="Control" parent="."]
 offset_left = 1110.0
 offset_top = 14.0
 offset_right = 1184.0
@@ -135,7 +135,7 @@ offset_bottom = 50.0
 mouse_filter = 2
 unique_name_in_owner = true
 script = ExtResource("8_tile")
-text = "LOW PWR"
+text = "CARGO"
 
 [node name="LowFuelTile" type="Control" parent="."]
 offset_left = 1192.0
@@ -512,7 +512,7 @@ mouse_filter = 2
 unique_name_in_owner = true
 script = ExtResource("5_needle")
 
-[node name="PowerNeedle" type="Control" parent="."]
+[node name="CargoNeedle" type="Control" parent="."]
 offset_left = 1148.0
 offset_top = 630.0
 offset_right = 1212.0
@@ -532,13 +532,13 @@ label_settings = ExtResource("ls_dial_face")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PowerFace" type="Label" parent="."]
+[node name="CargoFace" type="Label" parent="."]
 offset_left = 1160.0
 offset_top = 674.0
 offset_right = 1200.0
 offset_bottom = 684.0
 mouse_filter = 2
-text = "PWR"
+text = "CARGO"
 label_settings = ExtResource("ls_dial_face")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -555,7 +555,7 @@ label_settings = ExtResource("ls_engraved")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PowerValue" type="Label" parent="."]
+[node name="CargoValue" type="Label" parent="."]
 offset_left = 1142.0
 offset_top = 699.0
 offset_right = 1218.0

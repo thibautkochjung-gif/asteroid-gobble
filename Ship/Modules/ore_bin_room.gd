@@ -13,7 +13,7 @@ extends Room
 # from the back wall (-x), column by column, so the drawing shows exactly what's inside.
 
 @export var cell_size: float = 4.0 # Keep equal to Asteroid.cell_size
-@export_range(0.0, 1.0) var rock_trace_yield: float = 0.1 # Keep equal to SmelterRoom.rock_trace_yield
+@export_range(0.0, 1.0) var rock_trace_yield: float = 0.1 # Keep equal to the basic smelter's rock_trace_yield (smelter_room.tscn)
 
 @export_group("Visuals")
 @export var grate_color: Color = Color(0.2, 0.2, 0.23)
@@ -80,6 +80,23 @@ func get_ore_value() -> Dictionary[int, float]:
 		value[entry.y] = value.get(entry.y, 0.0) + units
 
 	return value
+
+
+# Throws out every cell of this material (ship menu). Returns how many.
+func remove_material(material_id: int) -> int:
+	var kept: Array[Vector2i] = []
+
+	for entry in contents:
+		if entry.x != material_id:
+			kept.append(entry)
+
+	var removed := contents.size() - kept.size()
+
+	if removed > 0:
+		contents = kept
+		contents_changed.emit()
+
+	return removed
 
 
 # CellMaterials.Id -> cells. For the menus.

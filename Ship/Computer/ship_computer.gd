@@ -20,6 +20,12 @@ extends Node
 # of mass, which moves as the hold fills. The computer looks for the strengths (0..1) whose sum
 # comes closest to the acceleration it wants, adjusting one thruster at a time, a few passes per
 # frame. Nothing here knows the Bucket's layout: another ship with other thrusters works too.
+#
+# Auto-trim (computers with can_auto_trim): ShipMovement hands the player's keys to trim() instead
+# of firing the thrusters by role. Each pressed axis gets the strongest burn that pushes along it
+# and nowhere else, whatever the balance of the ship: forward never spins or strafes, turning never
+# changes the speed. Existing drift and spin are left alone. With damaged thrusters a clean burn
+# may get too weak; the trim then settles for the closest burn and tells the terminal.
 
 signal message(text: String) # For the cockpit terminal
 
@@ -27,6 +33,9 @@ enum Order { NONE, KILL, MATCH }
 
 const SOLVER_PASSES: int = 12
 const MAX_HOVER_HITS: int = 32 # Results per query. A rock is made of many rectangles
+const TRIM_TOLERANCE: float = 0.0001 # Share of the largest effect under which two values count as equal
+const TRIM_TIE_PASSES: int = 300 # Most passes to balance the thrusters left at break-even (usually a handful)
+const TRIM_HYSTERESIS: float = 1.25 # Once degraded, a clean burn must beat the fallback ratio by this much to come back (no flicker)
 
 @export var ship: RigidBody2D
 @export var module: ComputerModule # Empty = a basic computer
@@ -41,6 +50,7 @@ var mothership_target: Mothership # The mothership being matched (Order.MATCH), 
 var hovered_mothership: Mothership # The mothership under the mouse, when no rock is
 
 var _is_matched: bool = false # The match order reached the rock's speed once (for the terminal)
+var _is_trim_degraded: bool = false # The last trim fell back on the closest burn on at least one axis
 var _hover_shape := CircleShape2D.new()
 
 
@@ -98,6 +108,52 @@ func steer(thrusters: Array[Thruster], is_player_steering: bool) -> void:
 	var wanted_acceleration := velocity_error / module.response_time if fixes_speed else Vector2.ZERO
 	var wanted_spin_acceleration := spin_error / module.response_time if fixes_spin else 0.0
 	_fire(thrusters, wanted_acceleration, wanted_spin_acceleration)
+
+
+func can_trim() -> bool:
+	return module.can_auto_trim
+
+
+# Called by ShipMovement instead of firing thrusters by role, when the computer can trim.
+# `intent` is the player's input in the ship's own frame, each part in -1..1:
+# x = forward (+) / backward (-), y = strafe right (+) / left (-), z = turn right (+) / left (-).
+# Each pressed axis is solved alone, then the burns are added up. If that asks more than 100% of a
+# thruster, every strength is scaled down by the same ratio, which keeps the sum clean.
+func trim(thrusters: Array[Thruster], intent: Vector3) -> void:
+	if intent == Vector3.ZERO:
+		return
+
+	var effects := _get_local_effects(thrusters)
+	var totals := PackedFloat64Array()
+	totals.resize(thrusters.size())
+	var is_degraded := false
+
+	for axis in 3:
+		var amount := intent[axis]
+
+		if amount == 0.0:
+			continue
+
+		var strengths := _solve_clean(effects, axis, signf(amount))
+
+		if strengths.is_empty():
+			is_degraded = true
+			strengths = _solve_closest(effects, _get_axis_goal(effects, axis, signf(amount)))
+
+		for i in thrusters.size():
+			totals[i] += absf(amount) * strengths[i]
+
+	var highest := 1.0
+
+	for total in totals:
+		highest = maxf(highest, total)
+
+	for i in thrusters.size():
+		thrusters[i].request_thrust(totals[i] / highest)
+
+	if is_degraded != _is_trim_degraded:
+		_is_trim_degraded = is_degraded
+		message.emit("Computer: trim degraded" if is_degraded else "Computer: trim restored")
 
 
 func _start_kill() -> void:
@@ -161,12 +217,22 @@ func _fire(thrusters: Array[Thruster], wanted_acceleration: Vector2, wanted_spin
 	for thruster in thrusters:
 		effects.append(_get_effect(thruster, center, state.inverse_mass, state.inverse_inertia))
 
-	var strengths := PackedFloat32Array()
-	strengths.resize(thrusters.size())
-	var error := -Vector3(wanted_acceleration.x, wanted_acceleration.y, wanted_spin_acceleration * spin_weight)
+	var goal := Vector3(wanted_acceleration.x, wanted_acceleration.y, wanted_spin_acceleration * spin_weight)
+	var strengths := _solve_closest(effects, goal)
+
+	for i in thrusters.size():
+		thrusters[i].request_thrust(strengths[i])
+
+
+# The strengths (0..1) whose summed effects come closest to `goal`, adjusting one thruster at a
+# time. Good at "about right", not at "exactly zero" on an axis: the trim uses _solve_clean for that.
+func _solve_closest(effects: Array[Vector3], goal: Vector3) -> PackedFloat64Array:
+	var strengths := PackedFloat64Array()
+	strengths.resize(effects.size())
+	var error := -goal
 
 	for _pass in SOLVER_PASSES:
-		for i in thrusters.size():
+		for i in effects.size():
 			var effect := effects[i]
 			var reach := effect.length_squared()
 
@@ -178,8 +244,7 @@ func _fire(thrusters: Array[Thruster], wanted_acceleration: Vector2, wanted_spin
 			error += effect * (new_strength - old_strength)
 			strengths[i] = new_strength
 
-	for i in thrusters.size():
-		thrusters[i].request_thrust(strengths[i])
+	return strengths
 
 
 func _get_effect(thruster: Thruster, center: Vector2, inverse_mass: float, inverse_inertia: float) -> Vector3:
@@ -243,3 +308,164 @@ func _pick_mothership(hits: Array[Dictionary]) -> Mothership:
 # Rocks being smelted leave the group; a rock bolted to the ship is frozen.
 func _is_valid_rock(rock: Asteroid) -> bool:
 	return is_instance_valid(rock) and rock.is_in_group(Asteroid.GROUP) and not rock.freeze
+
+
+# --- Auto-trim
+
+
+# Each thruster's effect at full strength (see _get_effect), turned into the ship's frame:
+# x = forward push, y = rightward push, z = right turn.
+func _get_local_effects(thrusters: Array[Thruster]) -> Array[Vector3]:
+	var state := PhysicsServer2D.body_get_direct_state(ship.get_rid())
+	var center := ship.global_position + state.center_of_mass
+	var effects: Array[Vector3] = []
+
+	for thruster in thrusters:
+		var effect := _get_effect(thruster, center, state.inverse_mass, state.inverse_inertia)
+		var push := Vector2(effect.x, effect.y).rotated(-ship.global_rotation)
+		effects.append(Vector3(push.x, push.y, effect.z))
+
+	return effects
+
+
+# The strongest clean burn along one axis (0 forward, 1 strafe, 2 turn; `direction` +1 or -1).
+# Returns one strength per thruster, or an empty array if the clean burn is too weak to be worth it.
+#
+# Each thruster has a gain (how much it helps along the axis) and a leak (what it adds on the two
+# other axes). We want the most total gain with a total leak of exactly zero.
+#
+# How: put a price on leaks, one per other axis (a Vector2). At a given price, a thruster is worth
+# firing if its gain beats the price of its leak, and worth(price) is the summed profit of those
+# thrusters. worth() is never below the best clean gain, and at the right price it equals it (this is
+# a small linear program, and worth() is its dual). Its lowest point sits where two thrusters'
+# break-even lines cross, on the point of a line closest to price zero, or at price zero: we try
+# them all and keep the lowest. At that price, profitable thrusters fire at full, losing ones stay
+# off, and the ones at break-even get the strengths that cancel the others' leak.
+func _solve_clean(effects: Array[Vector3], axis: int, direction: float) -> PackedFloat64Array:
+	var gains := PackedFloat64Array()
+	var leaks := PackedVector2Array()
+	var largest := 0.0
+	var raw_reach := 0.0 # The push along the axis if the leaks didn't matter
+
+	for effect in effects:
+		var gain := effect[axis] * direction
+		var leak := _get_leak(effect, axis)
+		gains.append(gain)
+		leaks.append(leak)
+		largest = maxf(largest, maxf(absf(gain), leak.length()))
+		raw_reach += maxf(gain, 0.0)
+
+	if raw_reach <= 0.0:
+		return PackedFloat64Array()
+
+	var tolerance := largest * TRIM_TOLERANCE
+	var best_price := Vector2.ZERO
+	var best_worth := INF
+
+	for price in _get_candidate_prices(gains, leaks, tolerance):
+		var worth := _get_worth(gains, leaks, price)
+
+		if worth < best_worth - tolerance:
+			best_worth = worth
+			best_price = price
+
+	var fallback_ratio := module.trim_fallback_ratio * TRIM_HYSTERESIS if _is_trim_degraded else module.trim_fallback_ratio
+
+	if best_worth < raw_reach * fallback_ratio:
+		return PackedFloat64Array()
+
+	var strengths := PackedFloat64Array()
+	strengths.resize(effects.size())
+	var at_break_even: Array[int] = []
+	var leftover := Vector2.ZERO
+
+	for i in effects.size():
+		var profit := gains[i] - leaks[i].dot(best_price)
+
+		if profit > tolerance:
+			strengths[i] = 1.0
+			leftover += leaks[i]
+		elif profit >= -tolerance:
+			at_break_even.append(i)
+
+	return _cancel_leak(strengths, leaks, at_break_even, leftover)
+
+
+# What a thruster adds on the two axes other than `axis`.
+func _get_leak(effect: Vector3, axis: int) -> Vector2:
+	match axis:
+		0:
+			return Vector2(effect.y, effect.z)
+		1:
+			return Vector2(effect.x, effect.z)
+
+	return Vector2(effect.x, effect.y)
+
+
+# Thruster i breaks even on the line leak_i · price = gain_i. Candidates: price zero, each line's
+# point closest to zero, and every crossing of two lines (parallel lines never cross).
+func _get_candidate_prices(gains: PackedFloat64Array, leaks: PackedVector2Array, tolerance: float) -> PackedVector2Array:
+	var prices := PackedVector2Array([Vector2.ZERO])
+	var min_size := tolerance * tolerance
+
+	for i in gains.size():
+		var leak_i := leaks[i]
+
+		if leak_i.length_squared() > min_size:
+			prices.append(leak_i * gains[i] / leak_i.length_squared())
+
+		for j in range(i + 1, gains.size()):
+			var leak_j := leaks[j]
+			var determinant := leak_i.cross(leak_j)
+
+			if absf(determinant) <= min_size:
+				continue
+
+			# Cramer's rule for leak_i · price = gain_i and leak_j · price = gain_j
+			var price_x := gains[i] * leak_j.y - gains[j] * leak_i.y
+			var price_y := leak_i.x * gains[j] - leak_j.x * gains[i]
+			prices.append(Vector2(price_x, price_y) / determinant)
+
+	return prices
+
+
+func _get_worth(gains: PackedFloat64Array, leaks: PackedVector2Array, price: Vector2) -> float:
+	var worth := 0.0
+
+	for i in gains.size():
+		worth += maxf(gains[i] - leaks[i].dot(price), 0.0)
+
+	return worth
+
+
+# Sets the break-even thrusters (0..1) so their leak cancels `leftover`, one at a time like
+# _solve_closest. There are few of them and a clean answer exists, so this lands on zero.
+func _cancel_leak(strengths: PackedFloat64Array, leaks: PackedVector2Array, at_break_even: Array[int], leftover: Vector2) -> PackedFloat64Array:
+	for _pass in TRIM_TIE_PASSES:
+		if leftover.is_zero_approx():
+			break
+
+		for i in at_break_even:
+			var reach := leaks[i].length_squared()
+
+			if reach <= 0.0:
+				continue
+
+			var old_strength := strengths[i]
+			var new_strength := clampf(old_strength - leaks[i].dot(leftover) / reach, 0.0, 1.0)
+			leftover += leaks[i] * (new_strength - old_strength)
+			strengths[i] = new_strength
+
+	return strengths
+
+
+# For the degraded trim: push along the axis as hard as the thrusters allow, leaks accepted.
+func _get_axis_goal(effects: Array[Vector3], axis: int, direction: float) -> Vector3:
+	var raw_reach := 0.0
+
+	for effect in effects:
+		raw_reach += maxf(effect[axis] * direction, 0.0)
+
+	var goal := Vector3.ZERO
+	goal[axis] = raw_reach * direction
+	return goal

@@ -8,7 +8,6 @@ extends SoftPoint
 #   It lets go by itself once the last ore cell is gone.
 # - It holds with spring forces, pad by pad (SoftLink). Two pads stop the rock from pivoting.
 #   Over grip_force, it slips: thrusting hard with a heavy rock in the clamp tears it loose.
-#   Short on power, the grip weakens.
 # The rock stays its own body: other things hit it, not the ship.
 
 @export var reach: float = 16.0 # px from the pads to the rock's surface
@@ -17,7 +16,6 @@ extends SoftPoint
 @export var stiffness: float = 120.0 # 1/s². See SoftLink
 @export var damping: float = 22.0 # 1/s
 @export var grip_force: float = 4000.0 # mass * px/s², per pad
-@export var power_per_second: float = 1.0
 @export var ore_check_interval: float = 0.5 # s
 
 @export_group("Look")
@@ -59,7 +57,7 @@ func _physics_process(delta: float) -> void:
 			_let_go("Clamp: no ore left, the magnet lets go")
 			return
 
-	var strength := draw_ship_power(power_per_second * delta)
+	var strength := get_performance()
 	var pads := _get_pad_points()
 
 	for i in anchors.size():

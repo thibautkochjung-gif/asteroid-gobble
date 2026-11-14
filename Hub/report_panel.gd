@@ -39,10 +39,30 @@ func _build() -> void:
 		body.add_child(HubStyle.label("The cargo is gone.", 17, HubStyle.BAD))
 		var payout: int = _report.get("payout", 0)
 		body.add_child(HubStyle.label("Insurance paid %s." % HubStyle.format_credits(payout) if payout > 0 else "No insurance payout.", 17))
-		body.add_child(HubStyle.label("The Union lends you a replacement Bucket.", 14, HubStyle.DIM))
+		body.add_child(HubStyle.label("%s lost with its modules." % _report.get("ship", "The ship"), 15))
 
+		if _report.get("replaced", false):
+			body.add_child(HubStyle.label("It was your last ship: the Union lends you a Bucket.", 14, HubStyle.DIM))
+
+	_build_contracts()
 	body.add_child(HubStyle.label("Fees this run: %s" % HubStyle.format_credits(_report.get("fees", 0)), 17))
 
 	var ok := HubStyle.button("OK", 18)
 	ok.pressed.connect(close_panel)
 	body.add_child(ok)
+
+
+# What the guild paid, what was handed in, and the rush deliveries that ran out.
+func _build_contracts() -> void:
+	var contracts: Dictionary = _report.get("contracts", {})
+	var delivered: Dictionary = _report.get("delivered", {})
+
+	for ore_id in delivered:
+		if delivered[ore_id] >= 0.5:
+			body.add_child(HubStyle.label("Handed to the guild: %d u %s" % [roundi(delivered[ore_id]), CellMaterials.get_material(ore_id).display_name], 15))
+
+	for paid in contracts.get("paid", []):
+		body.add_child(HubStyle.label("Guild paid %s: %s" % [HubStyle.format_credits(paid.reward), paid.title], 17, HubStyle.GOOD))
+
+	for title in contracts.get("expired", []):
+		body.add_child(HubStyle.label("%s ran out." % title, 15, HubStyle.BAD))

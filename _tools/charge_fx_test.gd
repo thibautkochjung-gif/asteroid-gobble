@@ -10,7 +10,6 @@ func _ready() -> void:
 	_player = _main.get_node("Player")
 	_soft_points = _player.get_node("SoftPoints")
 	_rooms = _player.get_node("Rooms")
-	_generator = _player.get_node("Generator")
 	var camera := _player.get_node("Camera2D") as Camera2D
 
 	await _frames(10)

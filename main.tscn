@@ -13,9 +13,9 @@
 [ext_resource type="Script" uid="uid://dx5cbvge67q6e" path="res://UI/rock_readout.gd" id="28_seu75"]
 [ext_resource type="Script" uid="uid://dcrqlg8pkxgmf" path="res://Mothership/mothership_dispatch.gd" id="30_kq58d"]
 [ext_resource type="PackedScene" path="res://Background/sky_background.tscn" id="30_seu75"]
+[ext_resource type="Script" uid="uid://d3xoweuej1hhy" path="res://Ship/FX/speed_fx.gd" id="31_speedfx"]
+[ext_resource type="PackedScene" uid="uid://y8ridcoiendc" path="res://Ship/Hulls/bucket.tscn" id="bucket_hull"]
 
-[ext_resource type="PackedScene" path="res://Ship/Hulls/bucket.tscn" id="bucket_hull"]
-[ext_resource type="Script" path="res://Ship/FX/speed_fx.gd" id="31_speedfx"]
 [node name="Node2D" type="Node2D" unique_id=916809345]
 
 [node name="RunLink" type="Node" parent="." unique_id=1210077099 node_paths=PackedStringArray("ship_rooms", "hardpoints", "ship_damage", "dispatch", "field")]
@@ -33,12 +33,11 @@ script = ExtResource("9_field")
 profile = ExtResource("9_belt")
 starter_cluster = ExtResource("9_starter")
 
-[node name="HUD" type="CanvasLayer" parent="." unique_id=1928374650 node_paths=PackedStringArray("hardpoints", "ship", "generator", "rooms", "hangar", "grinder", "soft_points", "balance_view", "ship_damage", "dispatch")]
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1928374650 node_paths=PackedStringArray("hardpoints", "ship", "rooms", "hangar", "grinder", "soft_points", "balance_view", "ship_damage", "dispatch")]
 layer = 2
 script = ExtResource("10_hud")
 hardpoints = NodePath("../Player/Hardpoints")
 ship = NodePath("../Player")
-generator = NodePath("../Player/Generator")
 rooms = NodePath("../Player/Rooms")
 hangar = NodePath("../Player/Hangar")
 grinder = NodePath("../Player/Grinder")
@@ -70,11 +69,10 @@ mouse_filter = 2
 script = ExtResource("24_lswn8")
 ship = NodePath("../../Player")
 
-[node name="Cockpit" parent="HUD" unique_id=137568970 node_paths=PackedStringArray("ship", "generator", "rooms", "hangar", "grinder", "soft_points", "hardpoints", "ship_damage", "computer", "dispatch", "speed_fx") instance=ExtResource("25_a6jrf")]
+[node name="Cockpit" parent="HUD" unique_id=137568970 node_paths=PackedStringArray("ship", "rooms", "hangar", "grinder", "soft_points", "hardpoints", "ship_damage", "computer", "dispatch", "speed_fx") instance=ExtResource("25_a6jrf")]
 layout_mode = 3
 anchors_preset = 0
 ship = NodePath("../../Player")
-generator = NodePath("../../Player/Generator")
 rooms = NodePath("../../Player/Rooms")
 hangar = NodePath("../../Player/Hangar")
 grinder = NodePath("../../Player/Grinder")
@@ -124,9 +122,14 @@ rooms = NodePath("../Player/Rooms")
 hardpoints = NodePath("../Player/Hardpoints")
 soft_points = NodePath("../Player/SoftPoints")
 
-[node name="ShipMenu" parent="." node_paths=PackedStringArray("grinder", "rooms") instance=ExtResource("17_shipmenu")]
+[node name="ShipMenu" parent="." unique_id=1952897968 node_paths=PackedStringArray("ship", "grinder", "rooms", "hardpoints", "ship_damage", "dispatch", "cockpit") instance=ExtResource("17_shipmenu")]
+ship = NodePath("../Player")
 grinder = NodePath("../Player/Grinder")
 rooms = NodePath("../Player/Rooms")
+hardpoints = NodePath("../Player/Hardpoints")
+ship_damage = NodePath("../Player/ShipDamage")
+dispatch = NodePath("../MothershipDispatch")
+cockpit = NodePath("../HUD/Cockpit")
 
 [node name="MothershipDispatch" type="Node" parent="." unique_id=326685057 node_paths=PackedStringArray("ship", "ship_damage")]
 script = ExtResource("30_kq58d")
@@ -135,7 +138,7 @@ ship_damage = NodePath("../Player/ShipDamage")
 
 [node name="SkyBackground" parent="." unique_id=1744454907 instance=ExtResource("30_seu75")]
 
-[node name="SpeedFx" type="Node2D" parent="." node_paths=PackedStringArray("ship", "ship_damage")]
+[node name="SpeedFx" type="Node2D" parent="." unique_id=1525480004 node_paths=PackedStringArray("ship", "ship_damage")]
 script = ExtResource("31_speedfx")
 ship = NodePath("../Player")
 ship_damage = NodePath("../Player/ShipDamage")

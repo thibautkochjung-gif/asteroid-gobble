@@ -1,26 +1,18 @@
 @tool
 class_name ShipHull
-extends Node2D
+extends HullArt
 
-# Draws the hull in code: the "Bucket", a starter ship welded together from whatever was lying around.
+# Draws the "Bucket" hull in code: a starter ship welded together from whatever was lying around.
+# Plates, grime, nozzle housings and colours come from HullArt, shared with the other hulls.
 # - One plate section around each room slot (the slot grown by hull_padding), so resizing a slot
 #   reshapes the hull. The biggest section is drawn last, on top: it bulges over its neighbours.
 # - The hangar prongs at the nose, shaped from the hangar's door line and doorway width.
 # - The generator housing and the main engine bell at the back. The bell ends on the main thruster.
 # - A nozzle housing on every other thruster, wherever it's placed.
 # - Bolted-on extras: crew cabin, radiator fins beside one slot, rear outriggers, an exposed fuel line.
-# Everything is drawn on 2 px texels, like the rooms. @tool: it's drawn in the editor too.
-#
-# Visuals only. The collision shapes are the ship's CollisionShape2D children, set by hand:
-# when the layout changes, update them too (Debug > Visible Collision Shapes helps to compare).
+# Visuals only, like every HullArt: the collision shapes are set by hand in the scene.
 
-const TEXEL: float = 2.0
-
-@export var rooms: ShipRooms
-@export var hangar: Hangar
-@export var thrusters: Node2D
 @export var main_engine: Node2D # The bell is drawn ending here. Gets no nozzle housing
-@export var grime_seed: int = 7 # Same seed, same dirt
 
 @export_group("Sections")
 @export var hull_padding: float = 6.0 # Hull around each slot, in px
@@ -49,34 +41,6 @@ const TEXEL: float = 2.0
 @export var fuel_line_from_x: float = -56.0
 @export var fuel_line_to_x: float = 72.0
 
-@export_group("Colors")
-@export var outline_color: Color = Color(0.06, 0.055, 0.07)
-@export var dark_color: Color = Color(0.21, 0.2, 0.22)
-@export var cabin_color: Color = Color(0.33, 0.35, 0.24)
-@export var glass_color: Color = Color(0.38, 0.69, 0.77)
-@export var glass_dark_color: Color = Color(0.2, 0.39, 0.47)
-@export var primer_color: Color = Color(0.67, 0.36, 0.18)
-@export var stripe_color: Color = Color(0.83, 0.64, 0.16)
-@export var stripe_dark_color: Color = Color(0.12, 0.11, 0.11)
-@export var pipe_color: Color = Color(0.54, 0.5, 0.45)
-@export var pipe_dark_color: Color = Color(0.36, 0.34, 0.31)
-@export var fin_color: Color = Color(0.59, 0.38, 0.27)
-@export var engine_color: Color = Color(0.26, 0.27, 0.31)
-@export var engine_inside_color: Color = Color(0.09, 0.09, 0.13)
-@export var nozzle_color: Color = Color(0.59, 0.59, 0.63)
-@export var grime_colors: Array[Color] = [Color(0.19, 0.18, 0.18), Color(0.38, 0.24, 0.16), Color(0.25, 0.24, 0.23)]
-
-var _rng := RandomNumberGenerator.new()
-
-
-func _ready() -> void:
-	set_process(Engine.is_editor_hint())
-
-
-func _process(_delta: float) -> void:
-	if Engine.is_editor_hint():
-		queue_redraw() # Follows slot, thruster and hangar edits live. Never runs in game
-
 
 func _draw() -> void:
 	_rng.seed = grime_seed
@@ -94,59 +58,13 @@ func _draw() -> void:
 	_draw_nozzles()
 
 
-func _get_slots() -> Array[RoomSlot]:
-	var slots: Array[RoomSlot] = []
-
-	if rooms == null:
-		return slots
-
-	for child in rooms.get_children():
-		if child is RoomSlot:
-			slots.append(child)
-
-	return slots
+# The main engine gets the big bell instead of a nozzle housing.
+func has_nozzle(thruster: Node2D) -> bool:
+	return thruster != main_engine
 
 
 func _get_section_rect(slot: RoomSlot) -> Rect2:
 	return Rect2(slot.position - slot.size * 0.5, slot.size).grow(hull_padding)
-
-
-# --- Plates
-
-
-# Outline, fill, a light top edge, a dark bottom edge, rivets, and some dirt.
-func _draw_plate(rect: Rect2, color: Color) -> void:
-	draw_rect(rect, outline_color)
-
-	var inner := rect.grow(-TEXEL)
-	draw_rect(inner, color)
-	draw_rect(Rect2(inner.position, Vector2(inner.size.x, TEXEL)), color.lightened(0.2))
-	draw_rect(Rect2(inner.position.x, inner.end.y - TEXEL, inner.size.x, TEXEL), color.darkened(0.3))
-
-	var x := inner.position.x + TEXEL
-
-	while x < inner.end.x - TEXEL:
-		draw_rect(Rect2(x, inner.position.y + TEXEL, TEXEL, TEXEL), color.darkened(0.35))
-		draw_rect(Rect2(x, inner.end.y - TEXEL * 2.0, TEXEL, TEXEL), color.darkened(0.35))
-		x += TEXEL * 4.0
-
-	_draw_grime(inner, int(inner.get_area() / 120.0))
-
-
-func _draw_grime(rect: Rect2, count: int) -> void:
-	if grime_colors.is_empty():
-		return
-
-	var columns := int(rect.size.x / TEXEL)
-	var rows := int(rect.size.y / TEXEL)
-
-	if columns <= 0 or rows <= 0:
-		return
-
-	for i in count:
-		var cell := Vector2(_rng.randi_range(0, columns - 1), _rng.randi_range(0, rows - 1))
-		var color := grime_colors[_rng.randi_range(0, grime_colors.size() - 1)]
-		draw_rect(Rect2(rect.position + cell * TEXEL, Vector2(TEXEL, TEXEL)), color)
 
 
 func _draw_sections(slots: Array[RoomSlot]) -> void:
@@ -203,35 +121,12 @@ func _draw_prongs() -> void:
 # --- Tail
 
 
-# Bell from the generator housing back to the main thruster, with ribs and a dark mouth.
+# Bell from the generator housing back to the main thruster.
 func _draw_engine() -> void:
 	if main_engine == null:
 		return
 
-	var mount_x := tail_rect.position.x
-	var exit_x := main_engine.position.x
-	var y := main_engine.position.y
-	var points := PackedVector2Array([
-		Vector2(mount_x, y - engine_mount_half_width),
-		Vector2(exit_x, y - engine_exit_half_width),
-		Vector2(exit_x, y + engine_exit_half_width),
-		Vector2(mount_x, y + engine_mount_half_width),
-	])
-	draw_colored_polygon(points, engine_color)
-
-	var length := mount_x - exit_x
-	var x := mount_x - TEXEL * 2.0
-
-	while x > exit_x + TEXEL:
-		var t := (mount_x - x) / length
-		var half := lerpf(engine_mount_half_width, engine_exit_half_width, t) - TEXEL
-		draw_rect(Rect2(x, y - half, TEXEL, half * 2.0), engine_color.lightened(0.15))
-		x -= TEXEL * 3.0
-
-	draw_rect(Rect2(exit_x, y - engine_exit_half_width + TEXEL, TEXEL * 2.0, engine_exit_half_width * 2.0 - TEXEL * 2.0), engine_inside_color)
-
-	points.append(points[0])
-	draw_polyline(points, outline_color, TEXEL)
+	_draw_bell(tail_rect.position.x, main_engine.position, engine_mount_half_width, engine_exit_half_width)
 
 
 # Struts from the generator housing out to the rear side thrusters.
@@ -298,23 +193,3 @@ func _draw_fuel_line() -> void:
 	while x < fuel_line_to_x:
 		draw_rect(Rect2(x, fuel_line_y - TEXEL, TEXEL, TEXEL * 4.0), outline_color) # Clamps
 		x += TEXEL * 12.0
-
-
-# A housing behind every thruster but the main engine. A thruster's +x is where its exhaust goes,
-# so the housing sits on its -x side; the flame starts at the thruster's own position.
-func _draw_nozzles() -> void:
-	if thrusters == null:
-		return
-
-	for child in thrusters.get_children():
-		var thruster := child as Node2D
-
-		if thruster == null or thruster == main_engine:
-			continue
-
-		draw_set_transform(thruster.position, thruster.rotation)
-		draw_rect(Rect2(-TEXEL * 4.0, -TEXEL * 2.0, TEXEL * 4.0, TEXEL * 4.0), outline_color)
-		draw_rect(Rect2(-TEXEL * 3.0, -TEXEL, TEXEL * 2.0, TEXEL * 2.0), pipe_dark_color)
-		draw_rect(Rect2(-TEXEL, -TEXEL * 2.0, TEXEL, TEXEL * 4.0), nozzle_color)
-
-	draw_set_transform(Vector2.ZERO)

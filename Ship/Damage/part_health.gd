@@ -41,6 +41,15 @@ func take_damage(amount: float) -> void:
 	changed.emit()
 
 
+# Damage that ignores is_invulnerable, for parts that count their own kind of hit (DeflectorProw).
+func wear(amount: float) -> void:
+	if amount <= 0.0 or points <= 0.0:
+		return
+
+	points = maxf(points - amount, 0.0)
+	changed.emit()
+
+
 func repair() -> void:
 	points = max_points
 	changed.emit()

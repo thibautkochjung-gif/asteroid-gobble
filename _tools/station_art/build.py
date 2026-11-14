@@ -5,7 +5,7 @@ from station import *
 from PIL import ImageDraw
 
 
-def add_far_traffic(im, seed):
+def add_far_traffic(im, seed, freighters=7):
 	rng = random.Random(seed)
 	d = ImageDraw.Draw(im)
 	W_, H_ = im.size
@@ -18,7 +18,7 @@ def add_far_traffic(im, seed):
 			d.rectangle([x + k * 10 + 2, y - 1, x + k * 10 + 4, y], fill=(97, 176, 196))
 	d.rectangle([x - 6, y + 1, x - 2, y + 2], fill=(245, 204, 92))
 	# bulk freighters and tugs
-	for _ in range(7):
+	for _ in range(freighters):
 		fx, fy = rng.uniform(0, W_), rng.uniform(0, H_)
 		L = rng.choice([6, 8, 14])
 		d.rectangle([fx, fy, fx + L, fy + 3], fill=(110, 105, 98))
@@ -171,8 +171,13 @@ h.save("v1_hub")
 Image.fromarray(h.img, "RGBA").save(f"{GD}/hub_core.png", optimize=True)
 
 sky = stars_img(820, 7, 410, 410)
-sky1 = stars_img(820, 7, 410, 410, scale=1)
-add_far_traffic(sky1, 7)
+# The game's sky is bigger than the mockup's: it turns behind the whole window, wide screens
+# included (the stage is 16:9, the window may not be). 1400 px at 2 stage px each covers windows
+# up to about 3.7:1. Same density of clouds and freighters as the 820 px mockup sky.
+GAME_SKY = 1400
+density = (GAME_SKY / 820) ** 2
+sky1 = stars_img(GAME_SKY, 7, GAME_SKY // 2, GAME_SKY // 2, scale=1, clouds=round(9 * density), wisps=round(4 * density))
+add_far_traffic(sky1, 7, round(7 * density))
 sky1.save(f"{GD}/sky.png", optimize=True)
 add_far_traffic(sky, 7)
 sky.save(f"{OUT}/v1_sky.png", optimize=True)

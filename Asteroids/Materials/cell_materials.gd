@@ -48,7 +48,8 @@ static func get_display_id(id: int, is_revealed: bool) -> int:
 	return HIDDEN_ORE_LOOK
 
 
-# Weighted by spawn_weight: common ores come up more often. Pass a seeded rng for a repeatable pick.
+# Weighted by spawn_weight: common ores come up more often. Belt fields weigh ores by depth
+# instead (BeltSettings.get_ore_weights). Pass a seeded rng for a repeatable pick.
 static func pick_ore_type(rng: RandomNumberGenerator = null) -> int:
 	return pick_ore_from(ORES, rng)
 

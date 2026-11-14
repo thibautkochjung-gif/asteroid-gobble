@@ -5,6 +5,7 @@
 [node name="NetLauncher" type="Node2D"]
 z_index = 1
 script = ExtResource("1_script")
+aim_arc_degrees = 20.0
 
 [node name="Muzzle" type="Marker2D" parent="."]
 position = Vector2(14, 0)

@@ -78,7 +78,7 @@ var slot_light: Color = Color.TRANSPARENT # Read by MothershipLights
 var extent := Rect2() # The whole train, local
 
 var _dock_from: Transform2D # The ship in its slot's space when docking started
-var _dock_angle: float = 0.0 # 0 or PI: the ship keeps the way it came in, nose first or tail first
+var _dock_angle: float = 0.0 # Along the slot (0 or PI) or across it (crosswise hulls): whichever of the two is closer to how the ship came in
 var _dock_elapsed: float = 0.0
 var _has_docked: bool = false
 var _too_fast_cooldown: float = 0.0
@@ -132,13 +132,14 @@ func _add_slot(at: Vector2, cls: String) -> void:
 	slots.append({ "xform": Transform2D(0.0, at), "cls": cls, "number": slots.size() + 1, "is_player": false })
 
 
-# The Bucket is a small ship: any S slot, picked at random, for the drop-off as for the pickup.
-# S slots sit on the outer edge of their car, so the way out sideways is always clear.
+# Any slot of the ship's size class (HullArt.berth_class), picked at random, for the drop-off as
+# for the pickup. S and M slots sit on the outer edge of their car, so the way out sideways is clear.
 func _pick_player_slot() -> void:
 	var candidates: Array[Dictionary] = []
+	var berth_class := HullArt.get_berth_class(ship)
 
 	for slot in slots:
-		if slot.cls == "S":
+		if slot.cls == berth_class:
 			candidates.append(slot)
 
 	if candidates.is_empty():
@@ -156,6 +157,16 @@ func get_player_exit_angle() -> float:
 
 func get_player_slot_transform() -> Transform2D:
 	return player_slot.xform
+
+
+# How the player's ship sits in its slot at the drop-off, in the slot's space. Along the slot,
+# facing aft. A crosswise hull (HullArt.berth_crosswise): across it, nose toward the way out, so it
+# leaves its slot flying forward.
+func get_player_berth_rotation() -> float:
+	if HullArt.is_berthed_crosswise(ship):
+		return get_player_exit_angle()
+
+	return PI
 
 
 func _ready() -> void:
@@ -296,7 +307,8 @@ func _start_docking() -> void:
 	slot_light = MothershipArt.LIGHT_GREEN
 	var slot_xform: Transform2D = player_slot.xform
 	_dock_from = (global_transform * slot_xform).affine_inverse() * ship.global_transform
-	_dock_angle = 0.0 if absf(angle_difference(_dock_from.get_rotation(), 0.0)) <= PI / 2.0 else PI
+	var berth_angle := PI / 2.0 if HullArt.is_berthed_crosswise(ship) else 0.0
+	_dock_angle = berth_angle if absf(angle_difference(_dock_from.get_rotation(), berth_angle)) <= PI / 2.0 else berth_angle + PI
 	_dock_elapsed = 0.0
 	ship.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
 	ship.freeze = true

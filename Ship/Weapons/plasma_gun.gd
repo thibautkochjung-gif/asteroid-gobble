@@ -17,9 +17,6 @@ enum State { IDLE, WINDING_UP, ACTIVE }
 @export var vaporize_time: float = 0.125 # Contact time to vaporize a soft-rock cell. Times the hardness
 @export var windup_time: float = 0.8 # Harmless, pale beam before it engages
 
-@export_group("Power")
-@export var power_per_second: float = 5.0 # Drawn during windup too. Short on power = slower windup and burn
-
 @export_group("Visuals")
 @export var beam_width: float = 4.0 # Twice the laser's
 @export var beam_color: Color = Color(0.25, 0.55, 1.0, 0.85)
@@ -28,7 +25,7 @@ enum State { IDLE, WINDING_UP, ACTIVE }
 @export var core_width: float = 1.5
 @export var core_color: Color = Color(0.85, 0.95, 1.0, 1.0)
 @export_range(0.0, 1.0) var flicker: float = 0.25 # Share of the width that wobbles each frame
-@export_range(0.0, 1.0) var min_power_alpha: float = 0.3 # Beam opacity with no power at all
+@export_range(0.0, 1.0) var min_strength_alpha: float = 0.3 # Beam opacity when the gun is broken
 @export var engage_pulse_time: float = 0.15 # The beam starts wider when it engages, then settles
 @export var engage_pulse_scale: float = 1.0 # Extra width at the start of the pulse (1 = twice as wide)
 
@@ -62,15 +59,15 @@ func _physics_process(delta: float) -> void:
 
 	update_aim(delta)
 
-	var power_ratio := draw_power(power_per_second * delta) * get_performance() # Damaged: slower windup and burn
+	var strength := get_performance() # Damaged: slower windup and burn
 
 	if state == State.WINDING_UP:
-		_windup_left -= delta * power_ratio
+		_windup_left -= delta * strength
 
 		if _windup_left <= 0.0:
 			_engage()
 
-	_update_look(delta, power_ratio)
+	_update_look(delta, strength)
 
 	var hits := _get_hits()
 
@@ -82,14 +79,14 @@ func _physics_process(delta: float) -> void:
 	var hit: Dictionary = hits[0]
 	_set_beam_length(hit["distance"])
 
-	var is_burning := state == State.ACTIVE and power_ratio > 0.0
+	var is_burning := state == State.ACTIVE and strength > 0.0
 	_set_burn_effects(is_burning)
 
 	if not is_burning:
 		return
 
 	_update_burn_effects(hit)
-	_burn(hit, delta * power_ratio)
+	_burn(hit, delta * strength)
 
 
 func _start_windup() -> void:
@@ -134,9 +131,9 @@ func _burn(hit: Dictionary, burn_time: float) -> void:
 # --- Visuals
 
 
-func _update_look(delta: float, power_ratio: float) -> void:
+func _update_look(delta: float, strength: float) -> void:
 	var wobble := randf_range(1.0 - flicker, 1.0)
-	beam.modulate.a = lerpf(min_power_alpha, 1.0, power_ratio)
+	beam.modulate.a = lerpf(min_strength_alpha, 1.0, strength)
 
 	if state == State.WINDING_UP:
 		var color := windup_color

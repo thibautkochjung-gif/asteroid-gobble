@@ -11,7 +11,6 @@ func _ready() -> void:
 	_player = _main.get_node("Player")
 	_soft_points = _player.get_node("SoftPoints")
 	_rooms = _player.get_node("Rooms")
-	_generator = _player.get_node("Generator")
 
 	_camera = Camera2D.new()
 	_main.add_child(_camera)

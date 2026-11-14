@@ -4,8 +4,8 @@ extends Node
 # The mothership service. Drops the player off at the start of a run, sends a mothership back for
 # the pickup when the player calls (C), and says when the player is back at the hub.
 #
-# Drop-off: the player starts in a random slot, lined up with it and facing aft, moving at the
-# train's speed. The clamps release and push the ship out sideways (drop_off_push); from there the
+# Drop-off: the player starts in a random slot, lined up with it and facing aft (a crosswise hull:
+# across it, nose out, see Mothership.get_player_berth_rotation), moving at the train's speed. The clamps release and push the ship out sideways (drop_off_push); from there the
 # main engine brakes it.
 #
 # Pickup: a train appears min_distance..max_distance from the player, already moving, and
@@ -50,7 +50,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed(call_action):
-		_call_pickup()
+		call_pickup()
 
 
 func _drop_off() -> void:
@@ -63,7 +63,7 @@ func _drop_off() -> void:
 	mothership.position = ship.global_position - mothership.get_player_slot_transform().origin.rotated(heading.angle())
 	_add(mothership)
 
-	var ship_transform := Transform2D(heading.angle() + PI, ship.global_position)
+	var ship_transform := Transform2D(heading.angle() + mothership.get_player_berth_rotation(), ship.global_position)
 	ship.global_transform = ship_transform
 	PhysicsServer2D.body_set_state(ship.get_rid(), PhysicsServer2D.BODY_STATE_TRANSFORM, ship_transform)
 	var outward := Vector2.from_angle(heading.angle() + mothership.get_player_exit_angle())
@@ -73,7 +73,20 @@ func _drop_off() -> void:
 	message.emit("Dispatch: drop-off, slot %02d. Clamps released" % mothership.player_slot.number)
 
 
-func _call_pickup() -> void:
+# The pickup on its way or waiting, or null.
+func get_pickup() -> Mothership:
+	return _pickup if is_instance_valid(_pickup) else null
+
+
+func can_call() -> bool:
+	if is_home or ship.freeze or get_pickup() != null:
+		return false
+
+	return ship_damage == null or not ship_damage.is_destroyed
+
+
+# The call_action key, or the ship menu's button.
+func call_pickup() -> void:
 	if is_home or ship.freeze:
 		return
 

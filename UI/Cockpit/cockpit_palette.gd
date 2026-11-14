@@ -1,8 +1,8 @@
 class_name CockpitPalette
 extends RefCounted
 
-# The cockpit's colours. Taken from the ship's own drawing code (ship_hull.gd, hangar.gd,
-# generator.gd) so the HUD reads as part of the same machine. Change them here, not in the widgets.
+# The cockpit's colours. Taken from the ship's own drawing code (ship_hull.gd, hangar.gd)
+# so the HUD reads as part of the same machine. Change them here, not in the widgets.
 
 const OUTLINE := Color(0.06, 0.055, 0.07)
 const YELLOW := Color(0.83, 0.64, 0.16) # Hazard stripe yellow

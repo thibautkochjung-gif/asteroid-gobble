@@ -32,13 +32,19 @@ func _physics_process(delta: float) -> void:
 		thruster.reset_strength()
 
 	var is_player_steering := false
+	var is_trimmed := computer != null and computer.can_trim() # The computer fires the thrusters for the player
 
 	for role in thrusters_by_role:
 		var strength := Input.get_action_strength(role)
-		_request_role(role, strength)
+
+		if not is_trimmed:
+			_request_role(role, strength)
 
 		if strength > 0.0:
 			is_player_steering = true
+
+	if is_trimmed:
+		computer.trim(thrusters, _get_intent())
 
 	if computer != null:
 		computer.steer(thrusters, is_player_steering) # Never fights the player: steps back while they steer
@@ -47,6 +53,15 @@ func _physics_process(delta: float) -> void:
 
 	for thruster in thrusters:
 		thruster.apply_thrust()
+
+
+# The player's keys in the ship's frame, for the computer's auto-trim (see ShipComputer.trim):
+# x = forward (+) / backward (-), y = strafe right (+) / left (-), z = turn right (+) / left (-).
+func _get_intent() -> Vector3:
+	var forward := Input.get_axis(&"backward_thrust", &"forward_thrust")
+	var strafe := Input.get_axis(&"left_thrust", &"right_thrust")
+	var turn := Input.get_axis(&"left_turn", &"right_turn")
+	return Vector3(forward, strafe, turn)
 
 
 func _request_role(role: StringName, strength: float) -> void:

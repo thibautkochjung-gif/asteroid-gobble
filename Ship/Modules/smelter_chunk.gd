@@ -6,7 +6,7 @@ extends RigidBody2D
 # Collision uses the same merged rectangles as Asteroid (Asteroid.merge_cells).
 # Unlike an asteroid it never splits: when the furnace melts a cell, the rest stays one body even
 # if it's no longer connected. It's a lump of rock being melted down, not a free-flying asteroid.
-# It isn't drawn by itself (its world is never rendered): SmelterRoom draws it, from rects.
+# It isn't drawn by itself (its world is never rendered): SmelterRoom draws it, cell by cell.
 
 var cells: Dictionary[Vector2i, int] = {} # Cell -> CellMaterials.Id
 var revealed_ore: Dictionary[Vector2i, bool] = {}
@@ -14,7 +14,6 @@ var ore_type: int = CellMaterials.Id.NICKEL_IRON # Rock cells hold traces of it
 var cell_size: float = 4.0
 var mass_per_cell: float = 0.1
 var rects: Array[Rect2i] = [] # Cells merged into rectangles, in cell units. For collision
-var draw_rects: Dictionary[int, Array] = {} # Display material id -> rectangles. For SmelterRoom's drawing
 
 var _local_center: Vector2 = Vector2.ZERO
 var _rect_shapes: Dictionary[Vector2i, RectangleShape2D] = {} # One resource per rectangle size, reused
@@ -52,7 +51,6 @@ func get_center() -> Vector2:
 # centre of mass (same reason as in Asteroid._rebuild_shapes).
 func _rebuild() -> void:
 	rects = Asteroid.merge_cells(cells.keys())
-	draw_rects = Asteroid.merge_cells_by_look(cells, revealed_ore)
 
 	for owner_id in get_shape_owners():
 		remove_shape_owner(owner_id)

@@ -8,6 +8,8 @@ extends HardpointWeapon
 # Lances are big: the launcher carries its own stock of stock_capacity, refilled at the station
 # (restock), not from the ship's ammo.
 # The lance leaves with the ship's velocity at the muzzle (inertia), and kicks the ship back.
+# Aiming: the tube follows the mouse inside its arc (aim_arc_degrees) while the button is held.
+# A released lance waits for the tube to reach the mouse.
 
 const TEXEL: float = 2.0
 
@@ -38,6 +40,8 @@ const TEXEL: float = 2.0
 var stock: int = 0
 var is_aiming: bool = false
 
+var _fire_queued: bool = false # Released before the tube reached the mouse: fires when it does
+
 @onready var preview: Line2D = $Muzzle/Preview
 @onready var reload_timer: Timer = $ReloadTimer
 
@@ -49,14 +53,19 @@ func _ready() -> void:
 	reload_timer.one_shot = true
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if Input.is_action_just_pressed(fire_action):
 		_on_fire_pressed()
+
+	_update_aim_for_state(delta)
 
 	if is_aiming:
 		_update_preview()
 
 		if Input.is_action_just_released(fire_action):
+			_fire_queued = true
+
+		if _fire_queued and is_on_target():
 			_fire()
 
 	queue_redraw()
@@ -82,6 +91,9 @@ func restock() -> void:
 
 
 func _on_fire_pressed() -> void:
+	if is_aiming:
+		return # Clicking again while a lance is queued
+
 	if not reload_timer.is_stopped():
 		cooldown_blocked.emit(reload_timer.time_left)
 		return
@@ -97,6 +109,13 @@ func _on_fire_pressed() -> void:
 	preview.visible = true
 
 
+func _update_aim_for_state(delta: float) -> void:
+	if is_aiming:
+		update_aim(delta)
+	else:
+		reset_aim(delta)
+
+
 func _update_preview() -> void:
 	var from := muzzle.global_position
 	var hits := Asteroid.find_hits_on_ray(get_tree(), from, from + get_forward() * max_range, 1)
@@ -110,6 +129,7 @@ func _update_preview() -> void:
 
 func _fire() -> void:
 	is_aiming = false
+	_fire_queued = false
 	preview.visible = false
 
 	var lance := LanceRound.new()

@@ -398,14 +398,14 @@ def nav_lights(c, R, n, offset=0.0):
 	return pts
 
 
-def stars_img(size, seed, cx, cy, scale=2, nebula=True):
+def stars_img(size, seed, cx, cy, scale=2, nebula=True, clouds=9, wisps=4):
 	rng = np.random.default_rng(seed)
 	img = np.zeros((size, size, 4), np.uint8)
 	img[:, :] = (8, 8, 13, 255)
 	if nebula:
 		ys, xs = np.mgrid[0:size, 0:size]
 		field = np.zeros((size, size))
-		for _ in range(9):
+		for _ in range(clouds):
 			x0, y0 = rng.uniform(0, size, 2)
 			sx, sy = rng.uniform(30, 110, 2)
 			field += rng.uniform(0.4, 1.0) * np.exp(-(((xs - x0) / sx) ** 2 + ((ys - y0) / sy) ** 2))
@@ -417,7 +417,7 @@ def stars_img(size, seed, cx, cy, scale=2, nebula=True):
 			img[idx == i, :3] = cc
 		# teal wisps
 		f2 = np.zeros((size, size))
-		for _ in range(4):
+		for _ in range(wisps):
 			x0, y0 = rng.uniform(0, size, 2)
 			f2 += np.exp(-(((xs - x0) / rng.uniform(20, 60)) ** 2 + ((ys - y0) / rng.uniform(60, 140)) ** 2))
 		img[(f2 * 0.5 + (dither - 0.5) * 0.1) > 0.32, :3] = (24, 44, 52)

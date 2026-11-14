@@ -36,8 +36,6 @@ extends HardpointWeapon
 @export var eject_max_angle_degrees: float = 60.0 # Keep under 90: debris then always moves away from the rock
 @export var separation_time: float = 1.5 # s the chunk and its rock don't collide, so the chunk clears the hole
 
-@export_group("Power")
-@export var power_per_second: float = 2.0 # Short on power = the arm moves but the bit doesn't cut
 
 @export_group("Visuals")
 @export var frames_per_second: float = 16.0
@@ -74,7 +72,6 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var has_power := is_running and draw_power(power_per_second * delta) >= 1.0
 	var performance := get_performance() # Damaged: the arm moves and the bit cuts slower
 
 	arm.speed_scale = performance
@@ -111,7 +108,7 @@ func _physics_process(delta: float) -> void:
 	arm.limit_tip(contact_distance)
 
 	var is_touching := contact_distance <= arm.tip_distance + contact_tolerance
-	var is_working := is_touching and has_power and performance > 0.0
+	var is_working := is_touching and is_running and performance > 0.0
 	var contact_point := global_position + forward * contact_distance
 	_update_effects(is_working, contact_point, forward)
 

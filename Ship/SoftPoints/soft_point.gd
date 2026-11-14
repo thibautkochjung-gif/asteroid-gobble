@@ -23,10 +23,11 @@ extends Node2D
 # Holding show_aim_preview (mouse 4 or left Alt) makes every loaded launcher draw where a tap
 # would send its shot. See "Aim preview" below.
 #
-# Hooks the ship's systems call through ShipSoftPoints: fuel (drop tank), power (capacitor),
-# ammo (ammo box), restocking at the station, and taking back props that come home (racks).
+# Hooks the ship's systems call through ShipSoftPoints: fuel (drop tank), ammo (ammo box), restocking at the station, and taking back props that come home (racks).
 
-enum Type { DROP_TANK, ROCK_BOLTER, BEACON_RACK, HARPOON, CHARGE_RACK, MAGNETIC_CLAMP, BALLAST, CAPACITOR, PROBE_RACK, FLARE_RACK, CACHE_BUOY, INGOT_CANISTER, AMMO_BOX, ORE_CANISTER } # New types go at the end: scenes store them as numbers
+# Scenes and saves store these as numbers: new types go at the end, and a removed type's number is
+# never reused (7 was the capacitor pack, removed with the power system).
+enum Type { DROP_TANK = 0, ROCK_BOLTER = 1, BEACON_RACK = 2, HARPOON = 3, CHARGE_RACK = 4, MAGNETIC_CLAMP = 5, BALLAST = 6, PROBE_RACK = 8, FLARE_RACK = 9, CACHE_BUOY = 10, INGOT_CANISTER = 11, AMMO_BOX = 12, ORE_CANISTER = 13 }
 
 const TYPE_NAMES := {
 	Type.DROP_TANK: "Drop tank",
@@ -36,7 +37,6 @@ const TYPE_NAMES := {
 	Type.CHARGE_RACK: "Demolition charges",
 	Type.MAGNETIC_CLAMP: "Magnetic clamp",
 	Type.BALLAST: "Ballast pod",
-	Type.CAPACITOR: "Capacitor pack",
 	Type.PROBE_RACK: "Survey probes",
 	Type.FLARE_RACK: "Flares",
 	Type.CACHE_BUOY: "Cache buoy",
@@ -138,7 +138,7 @@ func get_type_name() -> String:
 
 
 # --- Damage (see ShipDamage)
-# Damaged: weaker launches, less power drawn (weaker clamp, slower reel). Broken: the key does nothing.
+# Damaged: weaker launches, weaker clamp, slower reel. Broken: the key does nothing.
 # The health stays with the module: jettison it and pick it back up, it's still damaged.
 
 
@@ -210,24 +210,6 @@ func get_fuel() -> float:
 
 
 func get_fuel_capacity() -> float:
-	return 0.0
-
-
-# Power the ship's consumers can use. Returns how much was given.
-func draw_power(_amount: float) -> float:
-	return 0.0
-
-
-# Surplus from the generator. Returns how much was taken.
-func store_power(_amount: float) -> float:
-	return 0.0
-
-
-func get_power() -> float:
-	return 0.0
-
-
-func get_power_capacity() -> float:
 	return 0.0
 
 
@@ -318,15 +300,6 @@ func get_ship_velocity_at(global_point: Vector2) -> Vector2:
 # Where props go: the node the ship flies in.
 func get_space() -> Node:
 	return ship.get_parent()
-
-
-# Returns the share of the needed power the ship could give, 0..1, times the module's performance:
-# a damaged module gets less out of the same power.
-func draw_ship_power(amount: float) -> float:
-	if soft_points == null or soft_points.generator == null or amount <= 0.0:
-		return get_performance()
-
-	return soft_points.generator.draw_power(amount) / amount * get_performance()
 
 
 # Puts a prop in space at a global point, moving with the ship there plus `push`.

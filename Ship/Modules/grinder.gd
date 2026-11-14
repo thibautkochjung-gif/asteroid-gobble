@@ -22,9 +22,8 @@ extends Node2D
 # Feed rollers pull every chunk in the hold toward the back (feed_acceleration), so cut pieces and
 # chunks waiting for a free room don't drift back out of the doors. The rollers are part of the
 # ship, so the ship gets the opposite force: the pull alone doesn't move the ship.
-# Short on power = it works slower.
 # Visuals: a toothed drum on the back wall of the hold. Seen from above, each tooth comes out and
-# goes back in as the drum turns. It only turns while grinding, slower when short on power.
+# goes back in as the drum turns. It only turns while grinding.
 # The chunk being ground shakes a little (Asteroid.draw_offset: visual only, the body doesn't move),
 # more and more as the cut gets near.
 # This node sits at the ship's origin, so its local space is the ship's space.
@@ -35,12 +34,10 @@ const TEXEL: float = 2.0
 
 @export var ship: RigidBody2D
 @export var hangar: Hangar
-@export var generator: Generator
 @export var cut_time: float = 5.0 # Seconds of work per cut. The starter ship's grinder is small and slow
 @export var mill_threshold: int = 12 # Chunks this small are milled cell by cell (with an ore bin aboard)
 @export var mill_rate: float = 2.0 # Cells per second
 @export var discard_time: float = 0.5 # Seconds to throw out an unwanted chunk, whatever its size
-@export var power_per_second: float = 1.5
 @export var separation_speed: float = 6.0 # px/s between the two halves
 @export var max_grind_cells: int = 300 # Bigger rocks touching the hold are left alone
 @export var feed_acceleration: float = 30.0 # px/s², toward the back of the hold
@@ -50,7 +47,7 @@ const TEXEL: float = 2.0
 @export var drum_depth: float = 4.0 # px, from the back wall of the hold
 @export var tooth_pitch: float = 4.0 # px between two teeth, across the hold
 @export var tooth_max_length: float = 8.0 # px, a tooth fully out
-@export var spin_speed: float = 12.0 # rad/s of the drum at full power
+@export var spin_speed: float = 12.0 # rad/s of the drum
 @export var shake_amplitude: float = 1.0 # px, the chunk's shake when a cut starts
 @export var shake_build_up: float = 1.0 # px added by the time the cut is done
 @export var drum_color: Color = Color(0.09, 0.09, 0.13)
@@ -64,7 +61,6 @@ var progress: float = 0.0 # 0..1 toward the next cut, milled cell or discard
 
 var _target: Asteroid # The chunk being worked on. Null when idle
 var _shaken: Asteroid # The chunk whose draw_offset we moved, to put it back
-var _power_share: float = 1.0 # 0..1, from the last physics step
 var _drum_angle: float = 0.0
 var _was_drawn_working: bool = false
 var _rng := RandomNumberGenerator.new()
@@ -91,23 +87,21 @@ func _physics_process(delta: float) -> void:
 	if not is_working:
 		return
 
-	_power_share = _draw_power(delta)
-
 	match mode:
 		Mode.DISCARDING:
-			progress += delta / discard_time * _power_share
+			progress += delta / discard_time
 
 			if progress >= 1.0:
 				progress = 0.0
 				_discard(_target)
 		Mode.MILLING:
-			progress += delta * mill_rate * _power_share
+			progress += delta * mill_rate
 
 			if progress >= 1.0:
 				progress -= 1.0
 				_mill(_target)
 		Mode.CUTTING:
-			progress += delta / cut_time * _power_share
+			progress += delta / cut_time
 
 			if progress >= 1.0:
 				progress = 0.0
@@ -118,7 +112,7 @@ func _process(delta: float) -> void:
 	_update_shake()
 
 	if is_working:
-		_drum_angle = wrapf(_drum_angle + spin_speed * _power_share * delta, 0.0, TAU)
+		_drum_angle = wrapf(_drum_angle + spin_speed * delta, 0.0, TAU)
 		queue_redraw()
 	elif _was_drawn_working:
 		queue_redraw() # One last time, so the teeth stop where they are
@@ -292,19 +286,14 @@ func _cut(chunk: Asteroid) -> void:
 
 
 # Dust blown toward the back of the ship.
+# A puff out the back, for cells the player dumps from the ship menu.
+func puff_dust(dust_color: Color) -> void:
+	_puff(global_position, dust_color, ship.linear_velocity if ship != null else Vector2.ZERO)
+
+
 func _puff(global_point: Vector2, dust_color: Color, base_velocity: Vector2) -> void:
 	var backward := global_transform.basis_xform(Vector2.LEFT).normalized()
 	Fx.spawn_vaporize(PackedVector2Array([global_point]), backward, dust_color, base_velocity)
-
-
-# Returns the share of the needed power the generator could give, 0..1.
-func _draw_power(delta: float) -> float:
-	var needed := power_per_second * delta
-
-	if generator == null or needed <= 0.0:
-		return 1.0
-
-	return generator.draw_power(needed) / needed
 
 
 # --- Visuals
@@ -324,7 +313,7 @@ func _update_shake() -> void:
 	if target == null:
 		return
 
-	var amplitude := (shake_amplitude + shake_build_up * progress) * _power_share
+	var amplitude := (shake_amplitude + shake_build_up * progress)
 	var offset := Vector2(_rng.randf_range(-amplitude, amplitude), _rng.randf_range(-amplitude, amplitude))
 	target.draw_offset = offset.round()
 

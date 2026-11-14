@@ -1,46 +1,40 @@
 [gd_resource type="Resource" script_class="EconomyConfig" format=3 uid="uid://c8u2hm45snpe4"]
 
 [ext_resource type="Script" uid="uid://d3on8wh46gy21" path="res://Economy/economy_config.gd" id="1_economy"]
-[ext_resource type="Script" uid="uid://cqowvedckoc8d" path="res://Economy/field_destination.gd" id="2_field"]
+[ext_resource type="Resource" path="res://Asteroids/Belt/belt.tres" id="1_std6a"]
 [ext_resource type="Script" uid="uid://bp28kcwesco0" path="res://Economy/insurance_plan.gd" id="3_insurance"]
-[ext_resource type="Resource" uid="uid://b5cpxq4ouxrft" path="res://Asteroids/Field/belt_default.tres" id="4_belt"]
-[ext_resource type="Script" path="res://Economy/hull_definition.gd" id="5_hull"]
+[ext_resource type="Script" uid="uid://bhs61mylf25uo" path="res://Economy/hull_definition.gd" id="5_hull"]
 
-[sub_resource type="Resource" id="Field_near"]
-script = ExtResource("2_field")
-description = "Close to the ring. Small rocks, mostly ice and nickel-iron. Cheap and quiet."
-ores_hint = "Water ice, nickel-iron"
-profile = ExtResource("4_belt")
-world_seed = 101
+[sub_resource type="Resource" id="Hull_bucket"]
+script = ExtResource("5_hull")
+description = "Industrial, rugged, a bit shabby. Turns unevenly."
+scene_path = "res://Ship/Hulls/bucket.tscn"
 
-[sub_resource type="Resource" id="Field_cobalt"]
-script = ExtResource("2_field")
-display_name = "Cobalt reach"
-description = "A day out. Bigger rocks, cobalt in the clusters."
-ores_hint = "Nickel-iron, cobalt"
-drop_fee = 500
-profile = ExtResource("4_belt")
-world_seed = 202
+[sub_resource type="Resource" id="Hull_commuter"]
+script = ExtResource("5_hull")
+id = &"commuter"
+display_name = "Meridian Commuter"
+description = "Meridian's mid-range miner. Clean, balanced, no handling quirks. Four big rooms, two hardpoints, a wider mouth than the Bucket and a built-in trim computer."
+scene_path = "res://Ship/Hulls/meridian.tscn"
+price = 27000
+integrated_computer = true
 
-[sub_resource type="Resource" id="Field_drift"]
-script = ExtResource("2_field")
-display_name = "Deep drift"
-description = "Far out. Gold turns up in the big rocks."
-ores_hint = "Cobalt, gold"
-licence_tier = 2
-drop_fee = 1200
-profile = ExtResource("4_belt")
-world_seed = 303
+[sub_resource type="Resource" id="Hull_crab"]
+script = ExtResource("5_hull")
+id = &"crab"
+display_name = "The Crab"
+description = "Army surplus manipulator. A wide flat slab with a big hold, four hardpoints across the nose and wingtip jets: it turns and strafes like a much smaller ship."
+scene_path = "res://Ship/Hulls/crab.tscn"
+price = 52000
 
-[sub_resource type="Resource" id="Field_shoals"]
-script = ExtResource("2_field")
-display_name = "Outer shoals"
-description = "The edge of the belt. Platinum, and nobody to call for help."
-ores_hint = "Gold, platinum"
-licence_tier = 3
-drop_fee = 3000
-profile = ExtResource("4_belt")
-world_seed = 404
+[sub_resource type="Resource" id="Hull_harvester"]
+script = ExtResource("5_hull")
+id = &"harvester"
+display_name = "Meridian Harvester"
+description = "Meridian's long-haul processor, built to stay out for a long time. The flash smelter in the front drum comes with the hull and two big ingot holds sit in the drums behind it. Wide hammer head with a big mouth, four forward hardpoints, six soft points and a built-in trim computer. Slow to turn once the holds fill up."
+scene_path = "res://Ship/Hulls/meridian_harvester.tscn"
+price = 110000
+integrated_computer = true
 
 [sub_resource type="Resource" id="Insurance_none"]
 script = ExtResource("3_insurance")
@@ -61,14 +55,6 @@ premium_ratio = 0.07
 payout_ratio = 0.9
 covers_modules = true
 
-[sub_resource type="Resource" id="Hull_bucket"]
-script = ExtResource("5_hull")
-id = &"bucket"
-display_name = "The Bucket"
-description = "Industrial, rugged, a bit shabby. Turns unevenly."
-scene_path = "res://Ship/Hulls/bucket.tscn"
-price = 8000
-
 [resource]
 script = ExtResource("1_economy")
 market_depth = Dictionary[int, float]({
@@ -78,16 +64,15 @@ market_depth = Dictionary[int, float]({
 5: 200.0,
 6: 120.0
 })
-fields = Array[ExtResource("2_field")]([SubResource("Field_near"), SubResource("Field_cobalt"), SubResource("Field_drift"), SubResource("Field_shoals")])
-insurance_plans = Array[ExtResource("3_insurance")]([SubResource("Insurance_none"), SubResource("Insurance_basic"), SubResource("Insurance_full")])
-hulls = Array[ExtResource("5_hull")]([SubResource("Hull_bucket")])
-starting_hull = &"bucket"
+hulls = Array[ExtResource("5_hull")]([SubResource("Hull_bucket"), SubResource("Hull_commuter"), SubResource("Hull_crab"), SubResource("Hull_harvester")])
 room_prices = Dictionary[int, int]({
 0: 4000,
 1: 1500,
 2: 1000,
 3: 1200,
-4: 1000
+4: 1000,
+5: 6500,
+6: 7500
 })
 hardpoint_prices = Dictionary[int, int]({
 0: 2500,
@@ -112,7 +97,6 @@ soft_point_prices = Dictionary[int, int]({
 4: 2000,
 5: 1800,
 6: 600,
-7: 1500,
 8: 1600,
 9: 500,
 10: 1200,
@@ -120,3 +104,8 @@ soft_point_prices = Dictionary[int, int]({
 12: 800,
 13: 700
 })
+computer_prices = Dictionary[int, int]({
+0: 1000,
+1: 8000
+})
+insurance_plans = Array[ExtResource("3_insurance")]([SubResource("Insurance_none"), SubResource("Insurance_basic"), SubResource("Insurance_full")])

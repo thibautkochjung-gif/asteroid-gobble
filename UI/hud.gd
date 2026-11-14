@@ -6,7 +6,6 @@ extends CanvasLayer
 
 @export_group("Ship status")
 @export var ship: RigidBody2D
-@export var generator: Generator
 @export var rooms: ShipRooms
 @export var hangar: Hangar
 @export var grinder: Grinder
@@ -61,11 +60,6 @@ func _build_status_text() -> String:
 		lines.append("Hull    %.0f%%" % [100.0 * ship_damage.get_hull_ratio()])
 
 	lines.append("Speed   %.0f px/s" % ship.linear_velocity.length())
-	lines.append("Power   %d / %d" % [generator.stored, generator.battery_capacity])
-
-	if soft_points != null and soft_points.get_power_capacity() > 0.0:
-		lines[lines.size() - 1] += "   + caps %d / %d" % [soft_points.get_power(), soft_points.get_power_capacity()]
-
 	lines.append("Fuel    %d / %d" % [rooms.get_fuel(), rooms.get_fuel_capacity()])
 
 	if soft_points != null and soft_points.get_fuel_capacity() > 0.0:

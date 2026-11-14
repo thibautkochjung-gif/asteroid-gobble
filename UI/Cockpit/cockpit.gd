@@ -17,11 +17,12 @@ const MOUSE_BUTTON_NAMES := {
 	MOUSE_BUTTON_XBUTTON2: "M5",
 }
 const LOG_DIM_COLOR := "#3f7a2a" # Older terminal lines; the newest uses the label's own colour
+const HISTORY_LINES: int = 200 # Radio log lines kept for the ship menu
 const GARBLE_CHARACTERS := "#%&@$*=+/|<>?"
+const KEY_HINTS_RECT := Rect2(240.0, 474.0, 800.0, 48.0) # Design px. Just above the radar bezel, inside the free view
 
 @export_group("Ship systems")
 @export var ship: RigidBody2D
-@export var generator: Generator
 @export var rooms: ShipRooms
 @export var hangar: Hangar
 @export var grinder: Grinder
@@ -34,14 +35,15 @@ const GARBLE_CHARACTERS := "#%&@$*=+/|<>?"
 
 @export_group("Readouts")
 @export var pixels_per_meter: float = 1.0 # Speeds show in m/s. Set the world's scale here once it's decided
-@export var low_power_ratio: float = 0.25
+@export_range(0.0, 1.0) var cargo_caution_ratio: float = 0.85 # CARGO tile turns amber when the fullest store passes this; red when it's full
 @export var low_fuel_ratio: float = 0.2
 @export var impact_flash_time: float = 1.5 # s. How long IMPACT stays lit after a hit
 @export var overspeed_tint: Color = Color(1.25, 0.6, 0.45) # Speed readout at the peak of an overspeed alert
 @export var log_lines: int = 3 # Messages kept on the terminal, under the two status lines
 
 @export_group("Hits")
-@export var hit_sensitivity: float = 2.5 # Disturbance = sqrt(share of hull lost) x this. 1% → 0.25, 16% → full
+@export var hit_sensitivity: float = 2.5 # Disturbance = sqrt(share of hull lost above impact_min_share) x this
+@export_range(0.0, 0.1) var impact_min_share: float = 0.0025 # Share of the hull a hit must take to rattle the cockpit, light IMPACT and log. Slow bumps stay quiet
 @export var max_garble: float = 0.5 # Share of terminal characters scrambled at full disturbance
 
 var _log: PackedStringArray = []
@@ -49,13 +51,16 @@ var _impact_time_left: float = 0.0
 var _last_hull: float = -1.0
 var _was_grinding: bool = false
 var _terminal_text: String = ""
+var _history: Array[String] = [] # See get_history()
+var _run_time: float = 0.0 # s since the cockpit appeared. Stops while the game is paused
 var _base_position: Vector2 # Where _fit_to_viewport put us; the rattle shakes around it
+var _key_hints: HudKeyHints
 
 @onready var speed_value: Label = %SpeedValue
 @onready var spin_value: Label = %SpinValue
 @onready var spin_unit: Label = %SpinUnit
 @onready var impact_tile: HudAnnunciator = %ImpactTile
-@onready var low_power_tile: HudAnnunciator = %LowPowerTile
+@onready var cargo_tile: HudAnnunciator = %CargoTile
 @onready var low_fuel_tile: HudAnnunciator = %LowFuelTile
 @onready var hardpoint_buttons: Array[HudHardpointButton] = [%HardpointButton1, %HardpointButton2]
 @onready var mounts: Array[Control] = [%Mount1, %Mount2, %Mount3, %Mount4]
@@ -66,17 +71,66 @@ var _base_position: Vector2 # Where _fit_to_viewport put us; the rattle shakes a
 @onready var terminal: RichTextLabel = %Terminal
 @onready var fuel_needle: HudNeedle = %FuelNeedle
 @onready var fuel_value: Label = %FuelValue
-@onready var power_needle: HudNeedle = %PowerNeedle
-@onready var power_value: Label = %PowerValue
+@onready var cargo_needle: HudNeedle = %CargoNeedle
+@onready var cargo_value: Label = %CargoValue
 @onready var door_lever: HudLever = %DoorLever
 @onready var door_key: Label = %DoorKey
 @onready var radar: HudRadar = %Radar
 @onready var loadout: HudLoadout = %Loadout
 @onready var disturbance: CockpitDisturbance = %Disturbance
+@onready var hardpoints_title: Label = $HardpointsTitle
+
+
+# The panel has two sockets. A ship with more hardpoints gets them split into a grid of short
+# buttons, in slot order: row by row, left to right.
+func _add_hardpoint_buttons() -> void:
+	var count := hardpoints.get_slot_count()
+
+	if count <= hardpoint_buttons.size():
+		return
+
+	var area := Rect2(hardpoint_buttons[0].position, Vector2.ZERO).merge(Rect2(hardpoint_buttons[-1].position, hardpoint_buttons[-1].size))
+	var columns := hardpoint_buttons.size()
+	var rows := ceili(float(count) / columns)
+	var gap := 2.0
+	var cell := Vector2((area.size.x - gap * (columns - 1)) / columns, (area.size.y - gap * (rows - 1)) / rows)
+
+	while hardpoint_buttons.size() < count:
+		var button := hardpoint_buttons[0].duplicate() as HudHardpointButton
+		hardpoint_buttons[-1].add_sibling(button) # Right after the others: under the glass, like them
+		hardpoint_buttons.append(button)
+
+	for i in count:
+		var button := hardpoint_buttons[i]
+		button.position = area.position + Vector2(i % columns, floori(i / float(columns))) * (cell + Vector2(gap, gap))
+		button.size = cell
+
+
+# The panel has four mount sockets. A ship with more soft points gets all of them in the same strip,
+# shrunk to fit, in mount order.
+func _add_mounts() -> void:
+	var count := soft_points.get_mount_count()
+
+	if count <= mounts.size():
+		return
+
+	var area := Rect2(mounts[0].position, Vector2.ZERO).merge(Rect2(mounts[-1].position, mounts[-1].size))
+	var pitch := mounts[1].position.x - mounts[0].position.x
+	var shrink := area.size.x / (pitch * (count - 1) + mounts[0].size.x)
+
+	while mounts.size() < count:
+		var mount := mounts[0].duplicate() as Control
+		mounts[-1].add_sibling(mount) # Right after the others, like the hardpoint buttons
+		mounts.append(mount)
+
+	for i in count:
+		var mount := mounts[i]
+		mount.scale = Vector2(shrink, shrink)
+		mount.position = area.position + Vector2(i * pitch * shrink, area.size.y * (1.0 - shrink) * 0.5)
 
 
 func _ready() -> void:
-	assert(ship != null and generator != null and rooms != null and hangar != null, "Cockpit: assign the ship systems in the inspector")
+	assert(ship != null and rooms != null and hangar != null, "Cockpit: assign the ship systems in the inspector")
 	assert(grinder != null and soft_points != null and hardpoints != null and ship_damage != null, "Cockpit: assign the ship systems in the inspector")
 
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -85,11 +139,16 @@ func _ready() -> void:
 
 	radar.ship = ship
 	loadout.setup(ship, soft_points, hardpoints, ship_damage)
+	_add_hardpoint_buttons()
+	_add_mounts()
+	_add_key_hints()
 	refresh_key_texts()
 
 	soft_points.message.connect(_on_soft_point_message)
 	hardpoints.cooldown_blocked.connect(_on_cooldown_blocked)
 	hardpoints.weapon_message.connect(_on_weapon_message)
+	hardpoints.active_pair_changed.connect(_on_active_pair_changed)
+	_on_active_pair_changed(hardpoints.active_pair)
 	ship_damage.hull_changed.connect(_on_hull_changed)
 	ship_damage.destroyed.connect(_on_destroyed)
 
@@ -104,12 +163,14 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_run_time += delta
 	_impact_time_left = maxf(_impact_time_left - delta, 0.0)
 
 	_update_flight()
 	_update_warnings()
 	_update_hardpoints()
 	_update_soft_points()
+	_update_key_hints()
 	_update_status()
 	_update_gauges()
 	_update_terminal()
@@ -121,7 +182,7 @@ func refresh_key_texts() -> void:
 	var hard_keys := PackedStringArray()
 
 	for i in hardpoints.get_slot_count():
-		hard_keys.append(get_key_text(hardpoints.get_fire_action(i)))
+		hard_keys.append(get_key_text(hardpoints.get_trigger_action(i)))
 
 		if i < hardpoint_buttons.size():
 			hardpoint_buttons[i].key_text = hard_keys[i]
@@ -184,7 +245,7 @@ func get_free_view_rect() -> Rect2:
 # Lights flicker dimmer; screens drop out almost completely. Mechanical parts (switches, lever,
 # needles) don't flicker: the needles shake instead.
 func _setup_disturbance() -> void:
-	var lights: Array[CanvasItem] = [impact_tile, low_power_tile, low_fuel_tile, grind_led, smelt_led, door_led, impact_led]
+	var lights: Array[CanvasItem] = [impact_tile, cargo_tile, low_fuel_tile, grind_led, smelt_led, door_led, impact_led]
 	for button in hardpoint_buttons:
 		lights.append(button)
 
@@ -200,7 +261,7 @@ func _update_disturbance() -> void:
 	position = _base_position + disturbance.get_shake_offset() * scale
 	radar.interference = disturbance.level
 	fuel_needle.jitter = disturbance.level
-	power_needle.jitter = disturbance.level
+	cargo_needle.jitter = disturbance.level
 
 
 # --- Readouts
@@ -225,8 +286,14 @@ func _update_flight() -> void:
 
 
 func _update_warnings() -> void:
-	var power_ratio := generator.get_ratio()
-	low_power_tile.state = _get_warning_state(power_ratio, low_power_ratio)
+	var cargo_ratio := _get_cargo_ratio()
+
+	if cargo_ratio >= 1.0:
+		cargo_tile.state = HudAnnunciator.State.ALARM
+	elif cargo_ratio >= cargo_caution_ratio:
+		cargo_tile.state = HudAnnunciator.State.CAUTION
+	else:
+		cargo_tile.state = HudAnnunciator.State.OFF
 
 	var fuel_capacity := rooms.get_fuel_capacity() + soft_points.get_fuel_capacity()
 	var fuel_ratio := (rooms.get_fuel() + soft_points.get_fuel()) / fuel_capacity if fuel_capacity > 0.0 else 0.0
@@ -277,6 +344,18 @@ func _update_hardpoints() -> void:
 			button.state = HudHardpointButton.State.READY
 
 
+# Lights the active pair's buttons, and says on the panel which pair it is and how to switch.
+func _on_active_pair_changed(pair: int) -> void:
+	for i in hardpoint_buttons.size():
+		hardpoint_buttons[i].selected = hardpoints.is_slot_active(i)
+		hardpoint_buttons[i].pair_marker = hardpoints.get_pair_count() > 1
+
+	if hardpoints.get_pair_count() > 1:
+		hardpoints_title.text = "HARDPOINTS %d/%d  %s" % [pair + 1, hardpoints.get_pair_count(), get_key_text(ShipHardpoints.SWITCH_ACTION)]
+	else:
+		hardpoints_title.text = "HARDPOINTS"
+
+
 func _update_soft_points() -> void:
 	for i in mounts.size():
 		var mount := mounts[i]
@@ -309,6 +388,35 @@ func _update_soft_points() -> void:
 			led.state = HudLed.State.READY
 
 
+# Over everything else (the glass included): it's a prompt, not a panel.
+func _add_key_hints() -> void:
+	_key_hints = HudKeyHints.new()
+	_key_hints.position = KEY_HINTS_RECT.position
+	_key_hints.size = KEY_HINTS_RECT.size
+	add_child(_key_hints)
+
+
+# Shows the keys of the first bolted rock bolter: swing in, swing out, let go.
+func _update_key_hints() -> void:
+	var hints: Array[Dictionary] = []
+
+	for i in soft_points.get_mount_count():
+		var bolter := soft_points.get_module(i) as RockBolter
+
+		if bolter == null or bolter.state != RockBolter.State.LOCKED:
+			continue
+
+		var swing_in := bolter.is_swinging and Input.is_action_pressed(RockBolter.SWING_IN_ACTION)
+		var swing_out := bolter.is_swinging and Input.is_action_pressed(RockBolter.SWING_OUT_ACTION)
+		hints.append({ "key": get_key_text(RockBolter.SWING_IN_ACTION), "text": "NOSE IN", "lit": swing_in })
+		hints.append({ "key": get_key_text(RockBolter.SWING_OUT_ACTION), "text": "NOSE OUT", "lit": swing_out })
+		hints.append({ "key": get_key_text(soft_points.get_action(i)), "text": "LET GO", "lit": false })
+		_key_hints.title = "ROCK BOLTER  SWING %+d°" % roundi(bolter.swing)
+		break
+
+	_key_hints.hints = hints
+
+
 func _update_status() -> void:
 	grind_led.state = HudLed.State.ACTIVE if grinder.is_working else HudLed.State.OFF
 	smelt_led.state = HudLed.State.ACTIVE if rooms.get_smelter_cells() > 0 else HudLed.State.OFF
@@ -338,11 +446,23 @@ func _update_gauges() -> void:
 	else:
 		fuel_value.text = "%d / %d" % [roundi(rooms.get_fuel()), roundi(fuel_capacity)]
 
-	power_needle.value = generator.get_ratio()
-	power_value.text = "%d / %d" % [roundi(generator.stored), roundi(generator.battery_capacity)]
+	var cargo_ratio := _get_cargo_ratio()
+	cargo_needle.value = cargo_ratio
+	cargo_value.text = "%d%%" % roundi(cargo_ratio * 100.0)
 
-	if soft_points.get_power_capacity() > 0.0:
-		power_value.text += " +%d" % roundi(soft_points.get_power())
+
+# How full the fullest store is: ore bins or ingot holds, whichever is closer to full. That's
+# the one that stops the work when it fills (the grinder or the smelter waits).
+func _get_cargo_ratio() -> float:
+	var ratio := 0.0
+
+	if rooms.get_ore_bin_capacity() > 0:
+		ratio = float(rooms.get_ore_bin_cells()) / rooms.get_ore_bin_capacity()
+
+	if rooms.get_ingot_capacity() > 0.0:
+		ratio = maxf(ratio, rooms.get_ingot_units() / rooms.get_ingot_capacity())
+
+	return clampf(ratio, 0.0, 1.0)
 
 
 func _update_terminal() -> void:
@@ -392,8 +512,18 @@ func _dim(line: String) -> String:
 	return "[color=%s]%s[/color]" % [LOG_DIM_COLOR, line]
 
 
+# Every terminal line of the run, with the run time, for the ship menu's radio log.
+func get_history() -> Array[String]:
+	return _history
+
+
 func _add_log(text: String) -> void:
 	_log.append(text)
+	var seconds := floori(_run_time)
+	_history.append("%02d:%02d  %s" % [floori(_run_time / 60.0), seconds % 60, text])
+
+	while _history.size() > HISTORY_LINES:
+		_history.remove_at(0)
 
 	while _log.size() > log_lines:
 		_log.remove_at(0)
@@ -431,8 +561,12 @@ func _on_hull_changed() -> void:
 		return
 
 	var share := lost / ship_damage.max_hull
+
+	if share < impact_min_share and not ship_damage.is_destroyed:
+		return # A nudge: the hull still loses it, the cockpit doesn't make a scene
+
 	_impact_time_left = impact_flash_time
-	disturbance.hit(clampf(sqrt(share) * hit_sensitivity, 0.0, 1.0))
+	disturbance.hit(clampf(sqrt(share - impact_min_share) * hit_sensitivity, 0.0, 1.0))
 	_add_log("IMPACT  hull -%d%%" % maxi(roundi(share * 100.0), 1))
 
 

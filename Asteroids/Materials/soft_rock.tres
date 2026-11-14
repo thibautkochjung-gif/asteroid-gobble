@@ -1,15 +1,9 @@
-[gd_resource type="Resource" script_class="CellMaterial" format=3]
+[gd_resource type="Resource" script_class="CellMaterial" format=3 uid="uid://1bt7p00h6hai"]
 
-[ext_resource type="Script" path="res://Asteroids/Materials/cell_material.gd" id="1_mat"]
+[ext_resource type="Script" uid="uid://tr54gqk7qhwv" path="res://Asteroids/Materials/cell_material.gd" id="1_mat"]
 
 [resource]
 script = ExtResource("1_mat")
 display_name = "Regolith"
 color = Color(0.56, 0.51, 0.46, 1)
-hardness = 1.0
-is_ore = false
-value = 0.0
-spawn_weight = 0.0
-dark_chance = 0.07
 light_chance = 0.04
-has_facets = false

@@ -2,11 +2,9 @@ class_name ServicePanel
 extends HubPanel
 
 # The station services that aren't built yet: placeholders with a line of text.
+# Every service has its own screen now; this stays for the next ones.
 
-const TEXTS := {
-	&"shipyard": "Closed for refit. The Crab is on its way.",
-	&"guild": "Contracts and mining licences open soon.",
-}
+const TEXTS := {}
 
 var _service: StringName
 

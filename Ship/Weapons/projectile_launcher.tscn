@@ -7,6 +7,7 @@
 [node name="ProjectileLauncher" type="Node2D"]
 z_index = 1
 script = ExtResource("1_script")
+aim_arc_degrees = 20.0
 projectile_scene = ExtResource("3_projectile")
 
 [node name="Sprite" type="Sprite2D" parent="."]

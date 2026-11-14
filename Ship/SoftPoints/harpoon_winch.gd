@@ -17,7 +17,6 @@ enum State { STOWED, FLYING, HOOKED, RETRACTING }
 @export var max_length: float = 240.0 # The harpoon comes back if it flies this far without a hit
 @export var min_length: float = 14.0 # Reeling in stops here
 @export var reel_speed: float = 45.0 # px/s
-@export var reel_power_per_second: float = 3.0
 @export var retract_speed: float = 320.0 # px/s, relative to the ship, when the winch takes the harpoon back
 @export var stiffness: float = 30.0 # 1/s². See SoftLink
 @export var damping: float = 8.0 # 1/s
@@ -162,7 +161,7 @@ func _pull(delta: float) -> void:
 	_head_position = anchor.get_global_position()
 
 	if is_reeling and rope_length > min_length:
-		var ratio := draw_ship_power(reel_power_per_second * delta)
+		var ratio := get_performance()
 		rope_length = maxf(rope_length - reel_speed * delta * ratio, min_length)
 
 	var force := SoftLink.apply_spring(ship, get_tip(), anchor.body, _head_position, rope_length, stiffness, damping, true)

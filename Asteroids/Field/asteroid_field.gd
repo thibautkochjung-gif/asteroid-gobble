@@ -25,6 +25,13 @@ extends Node2D
 @export var park_check_interval: float = 0.25 # s between two passes over the rocks
 @export var debug_draw: bool = false # Outlines the loaded sectors, shaded by density
 
+@export_group("Belt")
+## Where this field sits in the belt changes its rocks (see AsteroidSectorPlanner). Null: no belt.
+## RunLink sets these from the drop point; the values here are for test runs (F6).
+@export var belt: BeltSettings = preload("res://Asteroids/Belt/belt.tres")
+@export var run_seed: int = 1 # Seeds the belt's richness (and, in the hub, the mothership route)
+@export var drop_km := Vector2(40.0, 0.0) # The belt point (km) at this node's origin. x = depth
+
 @export_group("Start")
 @export var clear_center := Vector2.ZERO # No rock spawns within clear_radius of this point: the drop-off spot
 @export var clear_radius: float = 700.0
@@ -138,6 +145,10 @@ func _make_planner() -> AsteroidSectorPlanner:
 	planner.pinned = _pinned
 	planner.clear_center = clear_center
 	planner.clear_radius = clear_radius
+
+	if belt != null:
+		planner.belt = BeltSampler.new(belt, run_seed, drop_km)
+
 	return planner
 
 

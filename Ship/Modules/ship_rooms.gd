@@ -17,10 +17,11 @@ const ROOM_SCENE_PATHS := {
 	Room.Type.FUEL_TANK: "res://Ship/Modules/fuel_tank_room.tscn",
 	Room.Type.AMMO: "res://Ship/Modules/ammo_room.tscn",
 	Room.Type.ORE_BIN: "res://Ship/Modules/ore_bin_room.tscn",
+	Room.Type.FLASH_SMELTER: "res://Ship/Modules/flash_smelter_room.tscn",
+	Room.Type.RECLAIM_SMELTER: "res://Ship/Modules/reclaim_smelter_room.tscn",
 }
 
 @export var ship: RigidBody2D # Rooms with physics inside (the smelter) need the ship's motion
-@export var power: Generator
 @export var starting_layout: Array[Room.Type] = [Room.Type.ORE_BIN, Room.Type.ORE_BIN, Room.Type.FUEL_TANK]
 
 var slots: Array[RoomSlot] = []
@@ -111,7 +112,7 @@ func empty_cargo() -> void:
 			room.clear_contents()
 
 
-# Everything aboard that will sell at the hub: ingots, raw cells and unsmelted chunks alike.
+# Everything aboard that will sell at the hub: ingots, raw cells and what's still in the smelters alike.
 # CellMaterials.Id of the ore -> units.
 func get_ore_aboard() -> Dictionary[int, float]:
 	var ore := get_ingots_by_ore()
@@ -124,16 +125,10 @@ func get_ore_aboard() -> Dictionary[int, float]:
 		if not room is SmelterRoom:
 			continue
 
-		var smelter := room as SmelterRoom
+		var inside := (room as SmelterRoom).get_ore_inside()
 
-		for chunk in smelter.chunks:
-			for cell in chunk.cells:
-				var material_id: int = chunk.cells[cell]
-
-				if CellMaterials.is_ore(material_id):
-					ore[material_id] = ore.get(material_id, 0.0) + 1.0
-				else:
-					ore[chunk.ore_type] = ore.get(chunk.ore_type, 0.0) + smelter.rock_trace_yield
+		for ore_id in inside:
+			ore[ore_id] = ore.get(ore_id, 0.0) + inside[ore_id]
 
 	return ore
 
@@ -316,6 +311,17 @@ func get_ore_bin_value() -> Dictionary[int, float]:
 				totals[ore_id] = totals.get(ore_id, 0.0) + value[ore_id]
 
 	return totals
+
+
+# Throws out every cell of this material from the ore bins. Returns how many.
+func dump_material(material_id: int) -> int:
+	var removed := 0
+
+	for room in rooms:
+		if room is OreBinRoom:
+			removed += (room as OreBinRoom).remove_material(material_id)
+
+	return removed
 
 
 # CellMaterials.Id -> cells, across all ore bins.

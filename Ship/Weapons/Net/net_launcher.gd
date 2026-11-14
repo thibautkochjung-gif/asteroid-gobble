@@ -8,7 +8,8 @@ extends HardpointWeapon
 # break_force, the bundle opens and the rocks drift free. Nets are unlimited, but the next one
 # takes reload_time to fold in.
 # Controls:
-# - net ready: hold fire to aim, release to fire;
+# - net ready: hold fire to aim (the launcher follows the mouse inside aim_arc_degrees), release
+#   to fire. A released net waits for the launcher to reach the mouse;
 # - net flying: press fire to close it now, on what it holds;
 # - bundle on the cable: hold fire to reel in, tap fire to let it go (the net opens);
 # - tow key (net_tow): put the bundle on the cable in tow and fold the next net. Its cable's ship
@@ -38,7 +39,6 @@ const HITCH_OFFSETS: Array[float] = [-14.0, 14.0, 0.0] # Across the stern, one p
 @export var damping: float = 6.0 # 1/s
 @export var break_force: float = 25000.0 # mass * px/s². Over this, the net tears
 @export var reel_speed: float = 40.0 # px/s
-@export var reel_power_per_second: float = 3.0
 @export var min_length: float = 30.0 # Reeling in stops here
 @export var tap_time: float = 0.25 # s. Released sooner: a tap (let go). Held longer: reeling
 @export var anchor_move_time: float = 0.8 # s for a cable's ship end to slide between the winch and the stern
@@ -58,6 +58,8 @@ var tows: Array[Dictionary] = [] # Cables tied to the stern
 var is_aiming: bool = false
 var is_reeling: bool = false
 
+var _fire_queued: bool = false # Released before the launcher reached the mouse: fires when it does
+
 var _press_time: float = -1.0 # s the fire button has been held, while a bundle is on the winch
 var _reload_left: float = 0.0
 var _stern_x: float = NAN # Ship-local x of the hull's rearmost point, found once
@@ -75,6 +77,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_reload_left = maxf(_reload_left - delta, 0.0)
 	_handle_fire(delta)
+	_update_aim_for_state(delta)
 
 	if Input.is_action_just_pressed(TOW_ACTION):
 		_on_tow_pressed()
@@ -88,7 +91,7 @@ func _process(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if not tether.is_empty():
 		if is_reeling:
-			var ratio := draw_power(reel_power_per_second * delta) * get_performance()
+			var ratio := get_performance()
 			tether["length"] = maxf(tether["length"] - reel_speed * delta * ratio, min_length)
 
 		if not _pull(tether, delta):
@@ -160,7 +163,7 @@ func _handle_fire(delta: float) -> void:
 		_handle_tethered_fire(delta)
 		return
 
-	if Input.is_action_just_pressed(fire_action):
+	if Input.is_action_just_pressed(fire_action) and not _fire_queued:
 		if is_instance_valid(shot):
 			shot.close_now()
 		elif _reload_left > 0.0:
@@ -169,8 +172,20 @@ func _handle_fire(delta: float) -> void:
 			is_aiming = true
 
 	if is_aiming and Input.is_action_just_released(fire_action):
+		_fire_queued = true
+
+	if _fire_queued and is_on_target():
 		is_aiming = false
+		_fire_queued = false
 		_fire()
+
+
+# Follows the mouse while aiming, swings back to the slot's axis otherwise (net out, cable on).
+func _update_aim_for_state(delta: float) -> void:
+	if is_aiming:
+		update_aim(delta)
+	else:
+		reset_aim(delta)
 
 
 # Hold: reel in. Tap: let go.

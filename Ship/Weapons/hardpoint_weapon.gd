@@ -2,7 +2,7 @@ class_name HardpointWeapon
 extends Node2D
 
 # Base class for every swappable hardpoint weapon.
-# ShipHardpoints sets weapon_type, fire_action, ship, power_source and hangar before add_child(),
+# ShipHardpoints sets weapon_type, fire_action, ship and hangar before add_child(),
 # so one weapon scene works on any slot and any mouse button.
 # Every weapon scene needs a Muzzle (Marker2D), anywhere in the scene: where the shot leaves from,
 # or the drill's tip.
@@ -26,6 +26,7 @@ enum Type {
 	HEAVY_TRACTOR_BEAM,
 	SMART_TRACTOR_BEAM,
 	BREACHING_LANCE,
+	DEFLECTOR_PROW,
 } # New types go at the end: scenes store them as numbers
 
 const TYPE_NAMES := {
@@ -42,11 +43,13 @@ const TYPE_NAMES := {
 	Type.HEAVY_TRACTOR_BEAM: "Heavy tractor beam",
 	Type.SMART_TRACTOR_BEAM: "Smart tractor beam",
 	Type.BREACHING_LANCE: "Breaching lance",
+	Type.DEFLECTOR_PROW: "Deflector prow",
 }
 
 # Shared by every weapon that has a second function (tractor push/pull, net tow).
 const MODE_ACTION: StringName = &"hardpoint_mode"
 const TOW_ACTION: StringName = &"net_tow"
+const AIM_TOLERANCE: float = 0.01 # rad, about half a degree. See is_on_target()
 
 @export_group("Aiming")
 @export var aim_arc_degrees: float = 0.0 # Whole arc the mouse can aim in, centred on the slot's axis. 0 = fixed
@@ -55,9 +58,9 @@ const TOW_ACTION: StringName = &"net_tow"
 var weapon_type: Type = Type.LASER # Set by ShipHardpoints
 var fire_action: StringName # Set by ShipHardpoints
 var ship: RigidBody2D # Set by ShipHardpoints
-var power_source: Generator # Set by ShipHardpoints. null = free to use
 var hangar: Hangar # Set by ShipHardpoints
 var ammo_source: ShipHardpoints # Set by ShipHardpoints. null = unlimited ammo (test scenes)
+var settings_key: String = "" # Set by ShipHardpoints: where the ship menu saves this weapon's settings (ShipLoadout.module_settings)
 var toughness: float = 1.0 # Times a standard part's points (PartHealth). Sturdier weapons raise it in _init()
 var is_damage_proof: bool = true # Impacts don't wear hard points. Only the ship's destruction breaks them
 
@@ -66,12 +69,22 @@ var _health: PartHealth
 @onready var muzzle: Marker2D = find_child("Muzzle") as Marker2D
 
 
-# Returns the share of the needed power the generator could give, 0..1.
-func draw_power(amount: float) -> float:
-	if power_source == null or amount <= 0.0:
-		return 1.0
+# --- Settings (ship menu, J)
+# A weapon with player settings overrides these three. ShipHardpoints calls apply_settings() before
+# add_child(), with what the loadout saved for this slot and type ({} the first time).
+# Saved through JSON: numbers come back as floats, so convert them in apply_settings().
 
-	return power_source.draw_power(amount) / amount
+
+func has_settings() -> bool:
+	return false
+
+
+func get_settings() -> Dictionary:
+	return {}
+
+
+func apply_settings(_settings: Dictionary) -> void:
+	pass
 
 
 # --- Damage (see ShipDamage)
@@ -150,10 +163,24 @@ func update_aim(delta: float) -> void:
 	if aim_arc_degrees <= 0.0:
 		return
 
+	_turn_toward(get_aim_angle(), delta)
+
+
+# The rotation the mouse asks for, clamped to the arc. 0 for a fixed weapon.
+func get_aim_angle() -> float:
+	if aim_arc_degrees <= 0.0:
+		return 0.0
+
 	var slot := get_parent() as Node2D
 	var to_mouse := slot.to_local(get_global_mouse_position()) - position
 	var half_arc := deg_to_rad(aim_arc_degrees) / 2.0
-	_turn_toward(clampf(to_mouse.angle(), -half_arc, half_arc), delta)
+	return clampf(to_mouse.angle(), -half_arc, half_arc)
+
+
+# The barrel points where the mouse asks. Weapons that fire on release wait for this, so a quick
+# click doesn't send the shot along wherever the barrel happened to be mid-turn.
+func is_on_target() -> bool:
+	return absf(angle_difference(rotation, get_aim_angle())) <= AIM_TOLERANCE
 
 
 # Swings back to the slot's axis.

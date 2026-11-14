@@ -34,9 +34,21 @@ extends SoftPoint
 #
 # Momentum: locking is a perfectly inelastic catch (like the hangar's): the pair keeps the
 # total linear momentum. Spin is only approximated: the ship's spin is scaled by the mass ratio.
+#
+# Swinging (bolter_swing_in / bolter_swing_out, K and L): while locked, the strut turns on its
+# hinge, like a guyed derrick: one guy reels in, the other pays out. "In" brings the nose toward
+# the rock, so the drill and the laser can work on the face the ship is bolted to. As it turns, the
+# strut slides in or out by itself to keep the hull hull_clearance px off the rock. The swing
+# stops at max_swing, at the strut's length limits, or when the hull can't clear the rock.
+# The pair's centre of mass stays put and the turn is shared by mass: on a big rock the ship does
+# the swinging, a small rock swings around the ship instead.
+# Only the first locked bolter swings: two rigs on the same keys would fight.
 
 enum State { STOWED, EXTENDING, LOCKED, RELEASING, RETRACTING }
 
+const SWING_IN_ACTION: StringName = &"bolter_swing_in"
+const SWING_OUT_ACTION: StringName = &"bolter_swing_out"
+const FORWARD := Vector2.RIGHT # The nose, in the ship's space
 const STRUT: int = 0
 const GUY_TOP: int = 1
 const GUY_BOTTOM: int = 2
@@ -61,6 +73,15 @@ const DUST_RING: Array[Vector2i] = [
 @export var max_lock_speed: float = 40.0 # px/s between rock and ship at the strut's foot. Faster: the pitons bounce off
 @export var release_ignore_time: float = 1.0 # s without collisions between ship and rock after letting go
 
+@export_group("Swing")
+@export var swing_speed: float = 35.0 # Degrees/s
+@export var max_swing: float = 100.0 # Degrees either way from where it bolted on
+@export var strut_speed: float = 150.0 # px/s the strut can slide to keep the hull clear
+@export var min_strut_length: float = 12.0 # px, hinge to foot
+@export var max_strut_length: float = 120.0 # px. Longer than reach: the swing may push the rock out
+@export var hull_clearance: float = 4.0 # px kept between the hull and the rock
+@export var hull_sample_spacing: float = 4.0 # px between the points that stand for the hull's outline
+
 @export_group("Release")
 @export var fly_off_speed: float = 140.0 # px/s, the kick that throws the pitons off the rock
 @export var fly_off_spin: float = 18.0 # rad/s at most, the pitons tumble as they fly
@@ -83,6 +104,8 @@ const DUST_RING: Array[Vector2i] = [
 
 var state: State = State.STOWED
 var welded: Asteroid # Only while LOCKED
+var swing: float = 0.0 # Degrees since the lock. Positive: the nose came toward the rock
+var is_swinging: bool = false # The swing moved this frame
 
 var _target: Asteroid # The rock being bolted (EXTENDING) or bolted (LOCKED)
 var _anchor_cells: Array[Vector2i] = [Vector2i.ZERO, Vector2i.ZERO, Vector2i.ZERO] # Per line
@@ -99,6 +122,12 @@ var _dust: Array[Dictionary] = [] # { "position", "velocity", "life", "max_life"
 
 var _rock_local: Transform2D # The bolted rock's place in the ship's space, kept from the lock
 var _mirror_owners: Array[int] = []
+var _mirror_centers: Array[Vector2] = [] # Per mirror owner: the rectangle's centre, in the rock's space
+var _swing_sign: float = 1.0 # Which way of turning the strut brings the nose in, for this lock
+var _hull_samples: PackedVector2Array = [] # Points along the hull's outline, ship space. Taken at the lock
+var _rock_center: Vector2 # Rock space. With _rock_radius: a circle around every cell, taken at the lock
+var _rock_radius: float = 0.0
+var _is_at_limit: bool = false # The limit was reported: stays quiet until the keys are let go
 var _space: Node # Where the rock was, and goes back to
 var _saved_layer: int = 0
 var _saved_mask: int = 0
@@ -127,6 +156,7 @@ func _physics_process(delta: float) -> void:
 			_extend(delta)
 		State.LOCKED:
 			_hold()
+			_swing(delta)
 		State.RELEASING:
 			_fly_off(delta)
 		State.RETRACTING:
@@ -157,7 +187,7 @@ func get_status_text() -> String:
 		State.EXTENDING:
 			return "bolting"
 		State.LOCKED:
-			return "bolted, %d cells" % welded.cells.size() if is_instance_valid(welded) else "bolted"
+			return "bolted, %d cells, swing %+d°" % [welded.cells.size(), roundi(swing)] if is_instance_valid(welded) else "bolted"
 		State.RELEASING, State.RETRACTING:
 			return "reeling in"
 
@@ -175,7 +205,7 @@ func get_controls_text() -> String:
 		State.EXTENDING:
 			return "tap: cancel"
 		State.LOCKED:
-			return "tap: let go"
+			return "tap: let go  %s/%s: swing" % [Cockpit.get_key_text(SWING_IN_ACTION), Cockpit.get_key_text(SWING_OUT_ACTION)]
 
 	return ""
 
@@ -378,6 +408,7 @@ func _weld(rock: Asteroid) -> void:
 	_rock_local = rock.transform
 	rock.shapes_rebuilt.connect(_rebuild_mirror)
 	_rebuild_mirror()
+	_prepare_swing(rock)
 
 	# The centre of mass moves into the pair now, then the pair gets its motion: the velocity
 	# set here is the pair's centre's, so it must already be there.
@@ -429,6 +460,13 @@ func _rebuild_mirror() -> void:
 		ship.shape_owner_set_transform(owner_id, _rock_local * Transform2D(0.0, center))
 		ship.shape_owner_add_shape(owner_id, welded.get_rect_shape(rect.size))
 		_mirror_owners.append(owner_id)
+		_mirror_centers.append(center)
+
+
+# The rock moved on the ship (swing): its copied shapes follow, without being rebuilt.
+func _move_mirror() -> void:
+	for i in _mirror_owners.size():
+		ship.shape_owner_set_transform(_mirror_owners[i], _rock_local * Transform2D(0.0, _mirror_centers[i]))
 
 
 func _clear_mirror() -> void:
@@ -437,6 +475,7 @@ func _clear_mirror() -> void:
 			ship.remove_shape_owner(owner_id)
 
 	_mirror_owners.clear()
+	_mirror_centers.clear()
 
 
 func _pin_rock() -> void:
@@ -448,6 +487,8 @@ func _pin_rock() -> void:
 func _unweld(rock: Asteroid) -> void:
 	_clear_mirror()
 	welded = null
+	swing = 0.0
+	is_swinging = false
 
 	if not is_instance_valid(rock):
 		soft_points.mass_changed.emit()
@@ -473,6 +514,209 @@ func _forget_rock() -> void:
 	welded = null
 	_target = null
 	soft_points.mass_changed.emit()
+
+
+# --- Swinging
+
+
+# Taken once at the lock: which way is "nose in", the hull's outline, and a circle around the rock.
+func _prepare_swing(rock: Asteroid) -> void:
+	swing = 0.0
+	is_swinging = false
+	_is_at_limit = false
+
+	var strut := _rock_local * _anchor_locals[STRUT] - _get_hinge()
+	_swing_sign = -1.0 if strut.cross(FORWARD) < 0.0 else 1.0
+	_hull_samples = _collect_hull_samples()
+
+	# Cutting only makes the rock smaller, so this circle stays big enough.
+	_rock_center = rock.to_local(rock.get_global_center())
+	_rock_radius = 0.0
+	var corner_reach := rock.cell_size * 0.75 # From a cell's centre to past its corner
+
+	for cell in rock.cells:
+		var cell_center := (Vector2(cell) + Vector2(0.5, 0.5)) * rock.cell_size
+		_rock_radius = maxf(_rock_radius, cell_center.distance_to(_rock_center) + corner_reach)
+
+
+func _swing(delta: float) -> void:
+	is_swinging = false
+
+	if state != State.LOCKED:
+		return
+
+	var input := Input.get_axis(SWING_OUT_ACTION, SWING_IN_ACTION)
+
+	if is_zero_approx(input) or not _is_steering_bolter():
+		_is_at_limit = false
+		return
+
+	if not _line_alive[GUY_TOP] or not _line_alive[GUY_BOTTOM]:
+		_report_limit("Rock bolter: a guy is gone, can't swing")
+		return
+
+	var step := clampf(swing + input * swing_speed * delta, -max_swing, max_swing) - swing
+
+	if is_zero_approx(step):
+		_report_limit("Rock bolter: swing at its limit")
+		return
+
+	var max_slide := strut_speed * delta
+
+	# A full step can need more sliding than one frame allows: smaller steps are tried before giving up.
+	for i in 3:
+		var placed: Variant = _place_rock(deg_to_rad(step * _swing_sign), max_slide, true)
+
+		if placed != null:
+			_is_at_limit = false
+			is_swinging = true
+			swing += step
+			_move_rock(placed, deg_to_rad(step * _swing_sign))
+			return
+
+		step *= 0.5
+
+	# The hull may already be too close (bolted near a bump of the hull): push the rock out first.
+	var pushed: Variant = _place_rock(0.0, max_slide, false)
+
+	if pushed != null and pushed != _rock_local:
+		_move_rock(pushed, 0.0)
+		return
+
+	_report_limit("Rock bolter: the hull would touch the rock")
+
+
+# Where the rock goes for one swing step: turned around the strut's hinge, then slid along the
+# strut so the hull stays just clear of it. Slides out as far as needed (up to max_slide), or, if
+# already clear and may_pull_in, one px in to hug the rock (never under min_strut_length).
+# Null if no length works.
+func _place_rock(angle: float, max_slide: float, may_pull_in: bool) -> Variant:
+	var hinge := _get_hinge()
+	var turned := Transform2D(0.0, hinge) * Transform2D(angle, Vector2.ZERO) * Transform2D(0.0, -hinge) * _rock_local
+	var foot := turned * _anchor_locals[STRUT]
+	var along := (foot - hinge).normalized()
+	var length := hinge.distance_to(foot)
+	var samples := _get_samples_near(turned, max_slide)
+	var slide := 0.0
+
+	while _hull_touches(_slid(turned, along * slide), samples):
+		slide += 1.0
+
+		if slide > max_slide or length + slide > max_strut_length:
+			return null
+
+	var can_pull_in := may_pull_in and slide == 0.0 and length - 1.0 >= min_strut_length
+
+	if can_pull_in and not _hull_touches(_slid(turned, -along), samples):
+		slide = -1.0
+
+	return _slid(turned, along * slide)
+
+
+# The rock goes to its new place on the ship. The pair's centre of mass stays where it is in
+# space, and the turn is shared by mass: the ship turns back by the rock's share.
+func _move_rock(new_local: Transform2D, angle: float) -> void:
+	var world_center := ship.global_transform * ship.center_of_mass
+
+	_rock_local = new_local
+	_pin_rock()
+	_move_mirror()
+	soft_points.mass_changed.emit() # ShipMass moves the centre of mass at once
+
+	var placed := Transform2D(ship.global_rotation - angle * welded.mass / ship.mass, Vector2.ZERO)
+	placed.origin = world_center - placed.basis_xform(ship.center_of_mass)
+	ship.global_transform = placed
+
+
+# True if a cell of the rock, placed at rock_transform, is within hull_clearance of the hull.
+func _hull_touches(rock_transform: Transform2D, samples: PackedVector2Array) -> bool:
+	var to_rock := rock_transform.affine_inverse()
+	var probes: Array[Vector2] = [Vector2.ZERO, Vector2(hull_clearance, 0.0), Vector2(-hull_clearance, 0.0), Vector2(0.0, hull_clearance), Vector2(0.0, -hull_clearance)]
+
+	for point in samples:
+		var local := to_rock * point
+
+		for probe in probes:
+			var cell := Vector2i(floori((local.x + probe.x) / welded.cell_size), floori((local.y + probe.y) / welded.cell_size))
+
+			if welded.cells.has(cell):
+				return true
+
+	return false
+
+
+# Only the hull points the rock could reach this frame are tested.
+func _get_samples_near(rock_transform: Transform2D, max_slide: float) -> PackedVector2Array:
+	var center := rock_transform * _rock_center
+	var limit := _rock_radius + hull_clearance + max_slide + welded.cell_size
+	var near := PackedVector2Array()
+
+	for point in _hull_samples:
+		if point.distance_squared_to(center) <= limit * limit:
+			near.append(point)
+
+	return near
+
+
+# Points every hull_sample_spacing px along the outline of each of the ship's own collision shapes
+# (not the rocks bolted on), in the ship's space.
+func _collect_hull_samples() -> PackedVector2Array:
+	var samples := PackedVector2Array()
+
+	for owner_id in ship.get_shape_owners():
+		if ship.shape_owner_get_owner(owner_id) is Asteroid or ship.is_shape_owner_disabled(owner_id):
+			continue
+
+		var owner_transform := ship.shape_owner_get_transform(owner_id)
+
+		for i in ship.shape_owner_get_shape_count(owner_id):
+			var corners := _get_corners(ship.shape_owner_get_shape(owner_id, i))
+
+			for j in corners.size():
+				var from := owner_transform * corners[j]
+				var to := owner_transform * corners[(j + 1) % corners.size()]
+				var count := maxi(1, ceili(from.distance_to(to) / hull_sample_spacing))
+
+				for k in count:
+					samples.append(from.lerp(to, float(k) / count))
+
+	return samples
+
+
+static func _get_corners(shape: Shape2D) -> PackedVector2Array:
+	if shape is ConvexPolygonShape2D:
+		return (shape as ConvexPolygonShape2D).points
+
+	var rect := shape.get_rect() # Rectangles exactly, anything else by its bounding box
+	return PackedVector2Array([rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)])
+
+
+static func _slid(rock_transform: Transform2D, offset: Vector2) -> Transform2D:
+	var moved := rock_transform
+	moved.origin += offset
+	return moved
+
+
+# The strut's hinge, in the ship's space.
+func _get_hinge() -> Vector2:
+	return ship.to_local(to_global(_get_mount(STRUT)))
+
+
+func _is_steering_bolter() -> bool:
+	for i in soft_points.get_mount_count():
+		var bolter := soft_points.get_module(i) as RockBolter
+
+		if bolter != null and bolter.state == State.LOCKED:
+			return bolter == self
+
+	return false
+
+
+func _report_limit(text: String) -> void:
+	if not _is_at_limit:
+		say(text)
+
+	_is_at_limit = true
 
 
 # --- Letting go

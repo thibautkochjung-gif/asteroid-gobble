@@ -56,6 +56,7 @@ var _elbow_sign: float = -1.0 # Which side the elbow bends to
 var _flip_pending: bool = false # A blocked path needs the elbow on its other side
 var _flip_time: float = 0.0 # How long the pending switch has been tried
 var _side: float = -1.0 # Side of the hull the shoulder is on: -1 = left (negative y), +1 = right
+var _outward_angle: float = -PI * 0.5 # Local. From the ship's centre through the shoulder: the swing never passes through the opposite direction
 var _head_length: float = 0.0
 var _upper_length: float = 0.0 # Read from the link sprites, so the art and the IK always agree
 var _forearm_length: float = 0.0
@@ -106,8 +107,18 @@ func setup(ship: RigidBody2D) -> void:
 	if _ship == null:
 		return
 
-	_side = 1.0 if _ship.to_local(global_position).y > 0.0 else -1.0
+	var shoulder := _ship.to_local(global_position)
+	_side = 1.0 if shoulder.y > 0.0 else -1.0
 	_elbow_sign = _side
+
+	# Pointing straight at the ship's centre is the one direction the arm never swings through.
+	# Straight sideways (the old rule) broke for shoulders far out on a wide hull: a goal just
+	# behind "straight inward" sent the arm all the way round the back, over the hull.
+	var away_from_ship := global_position - _ship.global_position
+	_outward_angle = _side * PI * 0.5
+
+	if shoulder.length() > 1.0:
+		_outward_angle = global_transform.basis_xform_inv(away_from_ship).angle()
 	angle = get_rest_angle()
 	head_angle = angle
 	_collect_hull_shapes()
@@ -163,7 +174,7 @@ func refresh_hull() -> void:
 
 # One step toward the goal pose: tip at goal_angle / goal_tip_distance. goal_head is the head
 # direction wanted there (NAN = let the arm choose: in line with the aim if possible).
-# Angles are interpolated around the outward direction, so the arm always swings around the
+# Angles are interpolated around the outward direction (ship's centre to shoulder), so the arm always swings around the
 # outside of the ship, never through it. A step that would hit the hull isn't taken: if the
 # combined step (swing + wrist + reach) is blocked, simpler steps are tried in turn (see below),
 # so the arm works its way around obstacles like the open hangar doors instead of freezing.
@@ -216,7 +227,7 @@ func _search_move(delta: float, goal_angle: float, goal_tip_distance: float, wan
 		else:
 			wanted_sign = -_elbow_sign
 
-	var outward_angle := _side * PI * 0.5
+	var outward_angle := _outward_angle
 	var theta := wrapf(angle - outward_angle, -PI, PI)
 	var goal_theta := wrapf(goal_angle - outward_angle, -PI, PI)
 	var new_angle := outward_angle + move_toward(theta, goal_theta, deg_to_rad(swing_speed_degrees) * delta)
@@ -284,6 +295,18 @@ func limit_tip(distance: float) -> void:
 func can_reach(local_angle: float, distance: float) -> bool:
 	var tip := clampf(distance, get_min_tip_distance(), max_reach)
 	return not is_nan(_choose_head_angle(local_angle, tip))
+
+
+# True if the arm can put its tip there with the head pointing exactly at head (local angle):
+# within max_reach, within the wrist's bend, with the wrist inside the links' reach and clear of the hull.
+func can_hold(local_angle: float, distance: float, head: float) -> bool:
+	if distance < get_min_tip_distance() or distance > max_reach:
+		return false
+
+	if absf(angle_difference(local_angle, head)) > deg_to_rad(max_wrist_bend_degrees) + 0.001:
+		return false
+
+	return _find_elbow_sign(local_angle, distance, head) != 0.0
 
 
 # Tests aim directions all around the shoulder. Along each one, the first cell of a candidate

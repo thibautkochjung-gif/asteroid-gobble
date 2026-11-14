@@ -11,6 +11,8 @@ extends HardpointWeapon
 # what its storage holds.
 # Released between two shots: the shot waits for the gap to end, then fires (input buffer), so
 # clicking a bit too fast doesn't lose shots. The preview stays up until it goes.
+# Aiming: the barrel follows the mouse inside its arc (aim_arc_degrees) while the button is held,
+# and between two shots of a burst. A released shot also waits for the barrel to reach the mouse.
 
 @export var projectile_scene: PackedScene
 @export var muzzle_speed: float = 2500.0 # px/s, relative to the ship. ~40 px per physics frame: projectile.gd checks the whole segment, so it can't skip a chunk
@@ -47,9 +49,11 @@ func _ready() -> void:
 	_fill_magazine.call_deferred()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if Input.is_action_just_pressed(fire_action):
 		_on_fire_pressed()
+
+	_update_aim_for_state(delta)
 
 	if not is_aiming:
 		return
@@ -59,7 +63,7 @@ func _process(_delta: float) -> void:
 	if Input.is_action_just_released(fire_action):
 		_shot_queued = true
 
-	if _shot_queued and shot_timer.is_stopped():
+	if _shot_queued and shot_timer.is_stopped() and is_on_target():
 		_fire()
 
 
@@ -100,6 +104,15 @@ func _on_fire_pressed() -> void:
 
 	is_aiming = true
 	preview.visible = true
+
+
+# Keeps following the mouse during the gap between two shots, so the next click is already on
+# target. Swings back to the slot's axis otherwise.
+func _update_aim_for_state(delta: float) -> void:
+	if is_aiming or not shot_timer.is_stopped():
+		update_aim(delta)
+	else:
+		reset_aim(delta)
 
 
 func _update_preview() -> void:

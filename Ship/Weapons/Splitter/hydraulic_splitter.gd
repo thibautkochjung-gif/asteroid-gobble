@@ -32,7 +32,6 @@ extends HardpointWeapon
 
 @export_group("Ram")
 @export var push_force: float = 40.0 # mass * px/s², backward on the ship. Ship ≈ 26 mass
-@export var power_per_second: float = 2.5 # Short on power: the arm moves but the ram doesn't drive
 
 @export_group("Look")
 @export var shake_amount: float = 0.6 # px the wedge shakes while driving
@@ -107,14 +106,14 @@ func _physics_process(delta: float) -> void:
 	arm.limit_tip(contact_distance) # The wedge doesn't go through rock: the ram does that
 
 	var is_touching := contact_distance <= arm.tip_distance + contact_tolerance
-	var has_power := is_running and _cooldown <= 0.0 and draw_power(power_per_second * delta) >= 1.0
+	var is_ready := is_running and _cooldown <= 0.0
 	var is_big_enough := false
 
 	if is_touching:
 		var touched: Asteroid = hits[0]["asteroid"]
 		is_big_enough = touched.cells.size() >= target_min_cells
 
-	var is_working := is_big_enough and has_power and performance > 0.0
+	var is_working := is_big_enough and is_ready and performance > 0.0
 	_set_driving(is_working)
 
 	if not is_working:

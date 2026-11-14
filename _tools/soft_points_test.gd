@@ -11,7 +11,6 @@ var _main: Node2D
 var _player: RigidBody2D
 var _soft_points: ShipSoftPoints
 var _rooms: ShipRooms
-var _generator: Generator
 var _camera: Camera2D
 var _log_lines := PackedStringArray()
 var _checks_passed: int = 0
@@ -24,7 +23,6 @@ func _ready() -> void:
 	_player = _main.get_node("Player")
 	_soft_points = _player.get_node("SoftPoints")
 	_rooms = _player.get_node("Rooms")
-	_generator = _player.get_node("Generator")
 
 	_camera = Camera2D.new()
 	_main.add_child(_camera)
@@ -45,7 +43,6 @@ func _ready() -> void:
 	await _test_beacon_and_flare()
 	await _test_cache_buoy()
 	await _test_canister()
-	await _test_capacitor()
 	await _test_ballast_and_balance()
 	await _test_tear_off()
 
@@ -410,32 +407,19 @@ func _test_canister() -> void:
 	_write("")
 	_write("== Cargo canister")
 	_reset_ship()
-	var rack := _install(2, SoftPoint.Type.CARGO_CANISTER) as CanisterRack
-	_rooms.store_ore(CellMaterials.Id.GOLD, 10.0)
-	var cargo_before := _rooms.get_cargo_cells()
+	var rack := _install(2, SoftPoint.Type.INGOT_CANISTER) as CanisterRack
+	_rooms.store_ingots(CellMaterials.Id.GOLD, 10.0)
+	var cargo_before := _rooms.get_ingot_units()
 	rack._on_tap()
 	await _frames(3)
 	var canister := _find_prop(CargoCanister) as CargoCanister
-	_write("  cargo %.1f -> %.1f, canister %.1f u, mass %.1f" % [cargo_before, _rooms.get_cargo_cells(), canister.get_units() if canister != null else 0.0, canister.mass if canister != null else 0.0])
-	_check(canister != null and _rooms.get_cargo_cells() < 0.01, "cargo poured into the canister and thrown")
+	_write("  cargo %.1f -> %.1f, canister %.1f u, mass %.1f" % [cargo_before, _rooms.get_ingot_units(), canister.get_units() if canister != null else 0.0, canister.mass if canister != null else 0.0])
+	_check(canister != null and _rooms.get_ingot_units() < 0.01, "cargo poured into the canister and thrown")
 
 	await _seconds(1.6)
 	_soft_points.try_recover(canister)
 	await _frames(2)
-	_check(rack.has_canister and _rooms.get_cargo_cells() > 9.9, "canister recovered, ore back in the hold")
-
-
-func _test_capacitor() -> void:
-	_write("")
-	_write("== Capacitor")
-	var capacitor := _install(3, SoftPoint.Type.CAPACITOR) as CapacitorPack
-	var battery_before := _generator.stored
-	var caps_before := capacitor.stored
-	var granted := _generator.draw_power(10.0)
-	_write("  drew %.1f: caps %.1f -> %.1f, battery %.1f -> %.1f" % [granted, caps_before, capacitor.stored, battery_before, _generator.stored])
-	_check(capacitor.stored < caps_before and is_equal_approx(_generator.stored, battery_before), "capacitor drawn first")
-	await _seconds(8.0)
-	_check(capacitor.stored > caps_before - 10.0, "capacitor recharging from the surplus (%.1f)" % capacitor.stored)
+	_check(rack.has_canister and _rooms.get_ingot_units() > 9.9, "canister recovered, ore back in the hold")
 
 
 func _test_ballast_and_balance() -> void:

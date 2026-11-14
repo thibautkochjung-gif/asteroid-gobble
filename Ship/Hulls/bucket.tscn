@@ -1,4 +1,4 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://y8ridcoiendc"]
 
 [ext_resource type="Script" uid="uid://sxhack1xc33t" path="res://Ship/ship_hull.gd" id="1_hull"]
 [ext_resource type="Script" uid="uid://lf4obdny5ru0" path="res://Camera/camera_2d.gd" id="2_h2yge"]
@@ -9,7 +9,6 @@
 [ext_resource type="PackedScene" path="res://Ship/FX/rcs_thruster_fx.tscn" id="7_rcsfx"]
 [ext_resource type="Script" uid="uid://cf2410v3sy6ht" path="res://Ship/Modules/ship_rooms.gd" id="11_rooms"]
 [ext_resource type="Script" uid="uid://cpdp7oux06caq" path="res://Ship/Modules/hangar.gd" id="12_hangar"]
-[ext_resource type="Script" uid="uid://oqhvt68gm4gg" path="res://Ship/Modules/generator.gd" id="13_generator"]
 [ext_resource type="Script" uid="uid://dk471uvmktvid" path="res://Ship/ship_mass.gd" id="14_mass"]
 [ext_resource type="Script" uid="uid://dyip3xr4wex8e" path="res://Ship/Weapons/ship_hardpoints.gd" id="17_hardpoints"]
 [ext_resource type="Script" uid="uid://bo477dghx4qlq" path="res://Ship/Damage/ship_damage.gd" id="18_d13ii"]
@@ -22,7 +21,7 @@
 [ext_resource type="Script" uid="uid://c0h52oxeptltr" path="res://Ship/SoftPoints/soft_point_mount.gd" id="22_mount"]
 [ext_resource type="Script" uid="uid://dvf10avpbpm0w" path="res://Ship/balance_view.gd" id="23_balance"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_4k2k6"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_k3lsv"]
 resource_local_to_scene = true
 shader = ExtResource("5_5vw27")
 shader_parameter/strength = 1.0
@@ -46,7 +45,7 @@ shader_parameter/flicker_speed = 20.0
 shader_parameter/scroll_speed = 2.0
 shader_parameter/distortion = 0.35
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_0rl1p"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ndk85"]
 resource_local_to_scene = true
 shader = ExtResource("5_5vw27")
 shader_parameter/strength = 1.0
@@ -70,7 +69,7 @@ shader_parameter/flicker_speed = 35.0
 shader_parameter/scroll_speed = 4.0
 shader_parameter/distortion = 0.5
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ok6jj"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2fvci"]
 resource_local_to_scene = true
 shader = ExtResource("5_5vw27")
 shader_parameter/strength = 1.0
@@ -94,7 +93,7 @@ shader_parameter/flicker_speed = 35.0
 shader_parameter/scroll_speed = 4.0
 shader_parameter/distortion = 0.5
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_facbu"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_l81mt"]
 resource_local_to_scene = true
 shader = ExtResource("5_5vw27")
 shader_parameter/strength = 1.0
@@ -118,7 +117,7 @@ shader_parameter/flicker_speed = 35.0
 shader_parameter/scroll_speed = 4.0
 shader_parameter/distortion = 0.5
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_b1qrp"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gu2bb"]
 resource_local_to_scene = true
 shader = ExtResource("5_5vw27")
 shader_parameter/strength = 1.0
@@ -142,7 +141,7 @@ shader_parameter/flicker_speed = 35.0
 shader_parameter/scroll_speed = 4.0
 shader_parameter/distortion = 0.5
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_come4"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_aqjq1"]
 resource_local_to_scene = true
 shader = ExtResource("5_5vw27")
 shader_parameter/strength = 1.0
@@ -166,7 +165,7 @@ shader_parameter/flicker_speed = 35.0
 shader_parameter/scroll_speed = 4.0
 shader_parameter/distortion = 0.5
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_h8e4i"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_q6k86"]
 resource_local_to_scene = true
 shader = ExtResource("5_5vw27")
 shader_parameter/strength = 1.0
@@ -261,7 +260,7 @@ fx = NodePath("FX")
 toughness = 3.6
 
 [node name="FX" parent="Thrusters/Back Main" unique_id=1100015839 instance=ExtResource("6_mainfx")]
-material = SubResource("ShaderMaterial_4k2k6")
+material = SubResource("ShaderMaterial_k3lsv")
 
 [node name="Front Left" type="Node2D" parent="Thrusters" unique_id=1100023758 node_paths=PackedStringArray("ship", "fx")]
 position = Vector2(110, -24)
@@ -272,7 +271,7 @@ ship = NodePath("../..")
 fx = NodePath("FX")
 
 [node name="FX" parent="Thrusters/Front Left" unique_id=1100031677 instance=ExtResource("7_rcsfx")]
-material = SubResource("ShaderMaterial_0rl1p")
+material = SubResource("ShaderMaterial_ndk85")
 
 [node name="Front Right" type="Node2D" parent="Thrusters" unique_id=1100039596 node_paths=PackedStringArray("ship", "fx")]
 position = Vector2(110, 24)
@@ -283,7 +282,7 @@ ship = NodePath("../..")
 fx = NodePath("FX")
 
 [node name="FX" parent="Thrusters/Front Right" unique_id=1100047515 instance=ExtResource("7_rcsfx")]
-material = SubResource("ShaderMaterial_ok6jj")
+material = SubResource("ShaderMaterial_2fvci")
 
 [node name="Left Forward" type="Node2D" parent="Thrusters" unique_id=1100055434 node_paths=PackedStringArray("ship", "fx")]
 position = Vector2(74, -38)
@@ -295,7 +294,7 @@ ship = NodePath("../..")
 fx = NodePath("FX")
 
 [node name="FX" parent="Thrusters/Left Forward" unique_id=1100063353 instance=ExtResource("7_rcsfx")]
-material = SubResource("ShaderMaterial_facbu")
+material = SubResource("ShaderMaterial_l81mt")
 
 [node name="Right Forward" type="Node2D" parent="Thrusters" unique_id=1100071272 node_paths=PackedStringArray("ship", "fx")]
 position = Vector2(74, 38)
@@ -307,7 +306,7 @@ ship = NodePath("../..")
 fx = NodePath("FX")
 
 [node name="FX" parent="Thrusters/Right Forward" unique_id=1100079191 instance=ExtResource("7_rcsfx")]
-material = SubResource("ShaderMaterial_b1qrp")
+material = SubResource("ShaderMaterial_gu2bb")
 
 [node name="Left Back" type="Node2D" parent="Thrusters" unique_id=1100087110 node_paths=PackedStringArray("ship", "fx")]
 position = Vector2(-82, -48)
@@ -319,7 +318,7 @@ ship = NodePath("../..")
 fx = NodePath("FX")
 
 [node name="FX" parent="Thrusters/Left Back" unique_id=1100095029 instance=ExtResource("7_rcsfx")]
-material = SubResource("ShaderMaterial_come4")
+material = SubResource("ShaderMaterial_aqjq1")
 
 [node name="Right Back" type="Node2D" parent="Thrusters" unique_id=1100102948 node_paths=PackedStringArray("ship", "fx")]
 position = Vector2(-82, 48)
@@ -331,14 +330,14 @@ ship = NodePath("../..")
 fx = NodePath("FX")
 
 [node name="FX" parent="Thrusters/Right Back" unique_id=1100110867 instance=ExtResource("7_rcsfx")]
-material = SubResource("ShaderMaterial_h8e4i")
+material = SubResource("ShaderMaterial_q6k86")
 
-[node name="Hull" type="Node2D" parent="." unique_id=1100118786 node_paths=PackedStringArray("rooms", "hangar", "thrusters", "main_engine")]
+[node name="Hull" type="Node2D" parent="." unique_id=1100118786 node_paths=PackedStringArray("main_engine", "rooms", "hangar", "thrusters")]
 script = ExtResource("1_hull")
+main_engine = NodePath("../Thrusters/Back Main")
 rooms = NodePath("../Rooms")
 hangar = NodePath("../Hangar")
 thrusters = NodePath("../Thrusters")
-main_engine = NodePath("../Thrusters/Back Main")
 
 [node name="FrontSectionCollision" type="CollisionShape2D" parent="." unique_id=1200000001]
 shape = SubResource("Shape_front_section")
@@ -383,15 +382,9 @@ position = Vector2(108, 8)
 rotation = -1.5707964
 shape = SubResource("RectangleShape2D_door")
 
-[node name="Generator" type="Node2D" parent="." unique_id=1100150462 node_paths=PackedStringArray("reserves")]
-position = Vector2(-86, 0)
-script = ExtResource("13_generator")
-reserves = NodePath("../SoftPoints")
-
-[node name="Rooms" type="Node2D" parent="." unique_id=1100158381 node_paths=PackedStringArray("ship", "power")]
+[node name="Rooms" type="Node2D" parent="." unique_id=1100158381 node_paths=PackedStringArray("ship")]
 script = ExtResource("11_rooms")
 ship = NodePath("..")
-power = NodePath("../Generator")
 
 [node name="Slot1" type="Marker2D" parent="Rooms" unique_id=1100166300]
 position = Vector2(48, 0)
@@ -425,16 +418,14 @@ monitorable = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hangar/Intake" unique_id=1100205895]
 shape = SubResource("RectangleShape2D_intake")
 
-[node name="Grinder" type="Node2D" parent="." unique_id=1100260001 node_paths=PackedStringArray("ship", "hangar", "generator")]
+[node name="Grinder" type="Node2D" parent="." unique_id=1100260001 node_paths=PackedStringArray("ship", "hangar")]
 script = ExtResource("20_grinder")
 ship = NodePath("..")
 hangar = NodePath("../Hangar")
-generator = NodePath("../Generator")
 
-[node name="Hardpoints" type="Node2D" parent="." unique_id=1100213814 node_paths=PackedStringArray("ship", "power", "hangar", "rooms", "soft_points")]
+[node name="Hardpoints" type="Node2D" parent="." unique_id=1100213814 node_paths=PackedStringArray("ship", "hangar", "rooms", "soft_points")]
 script = ExtResource("17_hardpoints")
 ship = NodePath("..")
-power = NodePath("../Generator")
 hangar = NodePath("../Hangar")
 rooms = NodePath("../Rooms")
 soft_points = NodePath("../SoftPoints")
@@ -445,11 +436,10 @@ position = Vector2(92, -30)
 [node name="RightHardpoint" type="Node2D" parent="Hardpoints" unique_id=1100237571]
 position = Vector2(92, 30)
 
-[node name="SoftPoints" type="Node2D" parent="." unique_id=1300000001 node_paths=PackedStringArray("ship", "rooms", "generator")]
+[node name="SoftPoints" type="Node2D" parent="." unique_id=1300000001 node_paths=PackedStringArray("ship", "rooms")]
 script = ExtResource("21_softpoints")
 ship = NodePath("..")
 rooms = NodePath("../Rooms")
-generator = NodePath("../Generator")
 
 [node name="LeftFore" type="Marker2D" parent="SoftPoints" unique_id=1300000002]
 position = Vector2(17, -36)

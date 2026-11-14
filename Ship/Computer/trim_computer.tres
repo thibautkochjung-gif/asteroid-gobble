@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ComputerModule" format=3]
+
+[ext_resource type="Script" path="res://Ship/Computer/computer_module.gd" id="1_module"]
+
+[resource]
+script = ExtResource("1_module")
+model = 1
+display_name = "Trim computer"
+can_auto_trim = true

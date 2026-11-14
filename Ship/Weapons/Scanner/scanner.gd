@@ -12,6 +12,8 @@ extends HardpointWeapon
 #   gives the ore, how many ore cells have been found and what they are worth.
 # Either way, "no ore detected" only shows once the line has covered the whole rock (full_coverage).
 # Every rock the line crosses gets its own readout, for readout_linger seconds after the last pass.
+# Aiming: while scanning, the scanner follows the mouse inside its arc (aim_arc_degrees), so the
+# sweep can be steered across a rock without turning the ship.
 
 const TEXEL: float = 2.0
 const FADE_STEPS: int = 8 # Segments in a line that fades out toward the end of the range
@@ -22,7 +24,6 @@ const FADE_STEPS: int = 8 # Segments in a line that fades out toward the end of 
 @export var sweep_speed: float = 2.0 # rad/s of the sweep's back-and-forth (sine phase)
 @export var band_degrees: float = 1.2 # Full width of the scan line itself: rays are cast inside it
 @export var rays_per_frame: int = 6
-@export var power_per_second: float = 1.5 # Short on power or damaged: fewer rays
 @export var readout_linger: float = 4.0 # s a rock's readout stays after the line last crossed it
 @export_range(0.0, 1.0) var full_coverage: float = 0.95 # Share of a rock's cells crossed to call it fully scanned
 
@@ -67,9 +68,12 @@ func _physics_process(delta: float) -> void:
 	is_scanning = Input.is_action_pressed(fire_action) and get_performance() > 0.0
 
 	if not is_scanning:
+		reset_aim(delta)
 		return
 
-	var strength := draw_power(power_per_second * delta) * get_performance()
+	update_aim(delta)
+
+	var strength := get_performance() # Damaged: fewer rays
 	_phase += sweep_speed * delta * strength
 	var ray_count := ceili(rays_per_frame * strength)
 

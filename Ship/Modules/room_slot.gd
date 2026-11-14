@@ -13,6 +13,7 @@ extends Marker2D
 		size = value
 		queue_redraw()
 
+@export var fixed: bool = false # Built into the hull: the room the hull comes with stays, the mechanic can't swap or sell it
 @export var editor_outline_color: Color = Color(0.4, 0.9, 1.0, 0.7)
 
 

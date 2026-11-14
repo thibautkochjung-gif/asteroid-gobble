@@ -16,12 +16,20 @@ extends HardpointWeapon
 # to the hull, and turn to face the hangar from a side hardpoint.
 #
 # The grabber's arm has no hitbox and doesn't avoid the hull (see grabber.tscn, Arm node): it can't
-# get stuck on the hangar doors. While a chunk is targeted, the ship's body also ignores collisions
-# with it, so the hull doesn't knock it away just before the claw closes.
+# get stuck on the hangar doors. Once the claw is within hull_pass_distance of its target, the
+# ship's body ignores collisions with that one chunk, so the hull doesn't knock it away just before
+# the claw closes. Every other chunk (and the target while the claw is still far) bumps into the
+# hull as usual.
 #
-# Release point: picked among points on arcs in front of the mouth, inside the funnel the open
-# doors form, so a chunk thrown from there toward the mouth can't hit a door leaf. The arm takes
-# whichever it can reach (an open door leaf can block some of them), closest to the chunk.
+# Release point: picked once per chunk, at the grab (see _pick_release_point). Dead centre in front
+# of the mouth when the claw can face the hangar from there; from a hardpoint far from the mouth,
+# a point shifted toward the grabber's side, inside the funnel the open doors form, so the chunk
+# goes in at a slant instead of the claw reaching past the mouth to push it from the inner side.
+#
+# Target filter (ship menu, J): skipped_materials. The claw only goes for a chunk with at least one
+# cell of a material it isn't told to skip. It goes by what the player sees (Asteroid.get_display_id):
+# ore nobody has seen yet looks like tough rock, to the claw too. Otherwise the grabber would find
+# hidden ore for free, and do the scanner's job.
 #
 # A carried chunk is frozen (kinematic) with its collisions off: it follows the claw exactly and
 # can't bump into the hull on the way. It also leaves the asteroid group, so lasers, drills and the
@@ -40,6 +48,7 @@ enum State { SEEKING, CARRYING, COOLDOWN }
 @export var grip_point: Vector2 = Vector2(22.0, 0.0) # Claw space (from the wrist): between the jaws' tips
 @export var grab_radius: float = 4.0 # The chunk's surface must come this close to the grip point
 @export var snap_time: float = 0.12 # How long the chunk takes to settle between the jaws
+@export var hull_pass_distance: float = 16.0 # px between the grip point and the target before the hull ignores it
 
 @export_group("Deposit")
 @export var deposit_gap: float = 6.0 # Chunk centre this far outside the door line when let go
@@ -49,10 +58,15 @@ enum State { SEEKING, CARRYING, COOLDOWN }
 @export var release_tolerance: float = 4.0 # How close the chunk must get to the deposit point
 @export var head_tolerance_degrees: float = 15.0 # How well the claw must face the hangar to let go
 @export var aim_depth: float = 10.0 # The push aims this far inside the door line
+@export var max_release_offset: float = 12.0 # px off the mouth's centreline, on the grabber's side, when the centre is out of reach
+@export var release_offset_step: float = 4.0
+@export var release_gap_step: float = 8.0 # Release points further out are tried too, this far apart
+@export var release_gap_tries: int = 3
 @export var throw_speed: float = 25.0 # px/s into the hangar, relative to the ship
 @export var cooldown_time: float = 0.4 # Pause after a throw
 @export var ignore_time: float = 2.0 # A released chunk can't be grabbed again for this long
 
+var skipped_materials: Array[int] = [] # CellMaterials.Id. Set from the ship menu (see the header)
 var is_running: bool = false
 var state: State = State.SEEKING
 var target: Asteroid
@@ -65,9 +79,11 @@ var _grip_start: Transform2D # Same, at the moment of the grab
 var _snap_progress: float = 0.0
 var _last_head_angle: float = 0.0
 var _is_staged: bool = false # Reached the staging point with this chunk
+var _release_point: Vector2 # Where this chunk is let go, in the hangar's space (see _pick_release_point)
 var _carried_layer: int = 0
 var _carried_mask: int = 0
 var _ignored: Dictionary[int, float] = {} # Chunk instance id -> seconds left
+var _passing: Asteroid # The one chunk the hull ignores: the target right at the claw, or the carried chunk
 
 @onready var arm: RobotArm = $Arm
 @onready var claw_sprite: Sprite2D = $Arm/Head/Sprite # Frame 0 open, 1 closed
@@ -82,6 +98,53 @@ func get_cooldown_ratio() -> float:
 		return 0.0
 
 	return clampf(_cooldown / cooldown_time, 0.0, 1.0)
+
+
+# --- Settings (ship menu)
+
+
+func has_settings() -> bool:
+	return true
+
+
+func get_settings() -> Dictionary:
+	return { "skipped": skipped_materials }
+
+
+func apply_settings(settings: Dictionary) -> void:
+	skipped_materials.clear()
+
+	for id in settings.get("skipped", []):
+		skipped_materials.append(int(id)) # JSON gives floats back
+
+
+func is_skipped(material_id: int) -> bool:
+	return skipped_materials.has(material_id)
+
+
+func set_skipped(material_id: int, is_skipped_now: bool) -> void:
+	if is_skipped_now and not is_skipped(material_id):
+		skipped_materials.append(material_id)
+	elif not is_skipped_now:
+		skipped_materials.erase(material_id)
+
+	# The current target may not be wanted anymore: rescan right away.
+	_retarget_timer = 0.0
+
+	if is_instance_valid(target) and not _is_wanted(target):
+		_set_target(null)
+
+
+# At least one cell the player can see as a material the claw isn't told to skip.
+func _is_wanted(chunk: Asteroid) -> bool:
+	if skipped_materials.is_empty():
+		return true
+
+	for cell in chunk.cells:
+		if not is_skipped(chunk.get_display_id(cell)):
+			return true
+
+	return false
 
 
 func get_hit_distance(global_point: Vector2) -> float:
@@ -147,6 +210,10 @@ func _seek(delta: float) -> void:
 	var reach_in := arm.muzzle.position.x - grip_point.x
 	arm.move(delta, nearest.angle(), nearest.length() + reach_in)
 
+	var grip := arm.head.to_global(grip_point)
+	var is_near_claw := target.get_closest_point(grip).distance_to(grip) <= hull_pass_distance
+	_set_passing(target if is_near_claw else null)
+
 	if _is_in_jaws(target):
 		_grab(target)
 
@@ -157,18 +224,28 @@ func _is_in_jaws(chunk: Asteroid) -> bool:
 	return chunk.get_closest_point(grip).distance_to(grip) <= grab_radius
 
 
-# Keeps the ship's collision exception on the current target only.
 func _set_target(new_target: Asteroid) -> void:
 	if new_target == target:
 		return
 
-	if is_instance_valid(target) and target != carried and ship != null:
-		ship.remove_collision_exception_with(target)
-
 	target = new_target
 
-	if is_instance_valid(target) and ship != null:
-		ship.add_collision_exception_with(target)
+	if _passing != carried:
+		_set_passing(null) # The new target gets it once the claw is close (see _seek)
+
+
+# Keeps the ship's collision exception on one chunk at most.
+func _set_passing(chunk: Asteroid) -> void:
+	if chunk == _passing:
+		return
+
+	if is_instance_valid(_passing) and ship != null:
+		ship.remove_collision_exception_with(_passing)
+
+	_passing = chunk
+
+	if is_instance_valid(_passing) and ship != null:
+		ship.add_collision_exception_with(_passing)
 
 
 func _update_target(delta: float) -> void:
@@ -194,7 +271,7 @@ func _update_target(delta: float) -> void:
 		_set_target(found["asteroid"])
 
 
-# Small, not just thrown, not already in the hangar's intake, and close enough.
+# Small, wanted (skipped_materials), not just thrown, not already in the hangar's intake, and close enough.
 func _is_grabbable(asteroid: Asteroid, search_length: float) -> bool:
 	if asteroid.cells.is_empty() or asteroid.cells.size() > max_chunk_cells:
 		return false
@@ -203,6 +280,9 @@ func _is_grabbable(asteroid: Asteroid, search_length: float) -> bool:
 		return false
 
 	if _ignored.has(asteroid.get_instance_id()):
+		return false
+
+	if not _is_wanted(asteroid):
 		return false
 
 	if hangar.intake.overlaps_body(asteroid):
@@ -216,7 +296,8 @@ func _is_grabbable(asteroid: Asteroid, search_length: float) -> bool:
 
 func _grab(chunk: Asteroid) -> void:
 	carried = chunk
-	target = null # The collision exception stays until the chunk is released
+	target = null # The hull keeps ignoring it (_passing) until it's released
+	_set_passing(chunk)
 
 	carried.remove_from_group(Asteroid.GROUP)
 	_carried_layer = carried.collision_layer
@@ -235,6 +316,9 @@ func _grab(chunk: Asteroid) -> void:
 	_grip = claw_inverse * settled
 	_snap_progress = 0.0
 	_is_staged = false
+
+	var center_in_claw := _grip * carried.to_local(carried.get_global_center())
+	_release_point = _pick_release_point(center_in_claw.x - arm.muzzle.position.x)
 	state = State.CARRYING
 
 
@@ -253,9 +337,9 @@ func _carry(delta: float) -> void:
 
 	var doors_open := hangar.open_amount >= 1.0
 	var center := carried.get_global_center()
-	var staging_point := hangar.to_global(Vector2(hangar.door_line_x + deposit_gap + wait_distance, 0.0))
-	var deposit_point := hangar.to_global(Vector2(hangar.door_line_x + deposit_gap, 0.0))
-	var inside_point := hangar.to_global(Vector2(hangar.door_line_x - aim_depth, 0.0))
+	var inside_point := hangar.to_global(_get_inside_point())
+	var deposit_point := hangar.to_global(_release_point)
+	var staging_point := deposit_point + (deposit_point - inside_point).normalized() * wait_distance
 
 	if center.distance_to(staging_point) <= staging_tolerance:
 		_is_staged = true
@@ -305,10 +389,50 @@ func _hold(delta: float) -> void:
 	carried.global_transform = arm.head.global_transform * grip
 
 
+# The release point, in the hangar's space. Dead centre in front of the mouth if the arm can hold
+# the chunk there with the claw facing the inside point. Otherwise (a hardpoint far from the
+# mouth: the wrist can't fold back that far), a point shifted toward the grabber's own side,
+# then further out: the claw then faces into the mouth at a slant, and doesn't have to reach
+# past the mouth and push from the inner side. Inside the funnel the open doors form, so the
+# throw can't hit a leaf. The centre is the fallback: the arm gets as close as it can.
+# ahead_of_tip: how far the chunk's centre sits ahead of the claw's tip.
+func _pick_release_point(ahead_of_tip: float) -> Vector2:
+	var side := 1.0 if hangar.to_local(global_position).y > 0.0 else -1.0
+	var local_inside := to_local(hangar.to_global(_get_inside_point()))
+	var centre := Vector2(hangar.door_line_x + deposit_gap, 0.0)
+	var best := centre
+	var best_score := INF
+
+	for gap_index in release_gap_tries:
+		var offset := 0.0
+
+		while offset <= max_release_offset + 0.01:
+			var point := Vector2(centre.x + gap_index * release_gap_step, offset * side)
+			var score := offset + gap_index * release_gap_step
+
+			if score < best_score:
+				var local_point := to_local(hangar.to_global(point))
+				var into_hangar := (local_inside - local_point).normalized()
+				var goal_tip := local_point - into_hangar * ahead_of_tip
+
+				if arm.can_hold(goal_tip.angle(), goal_tip.length(), into_hangar.angle()):
+					best = point
+					best_score = score
+
+			offset += release_offset_step
+
+	return best
+
+
+# What the claw faces, and the throw aims at: the mouth's centre, a bit inside the door line.
+func _get_inside_point() -> Vector2:
+	return Vector2(hangar.door_line_x - aim_depth, 0.0)
+
+
 # A gentle push toward the mouth's centre, a bit inside the door line.
 func _throw() -> void:
 	var center := carried.get_global_center()
-	var aim_point := hangar.to_global(Vector2(hangar.door_line_x - aim_depth, 0.0))
+	var aim_point := hangar.to_global(_get_inside_point())
 	var direction := (aim_point - center).normalized()
 
 	_release(get_ship_velocity_at(center) + direction * throw_speed)
@@ -323,9 +447,7 @@ func _release(velocity: Vector2) -> void:
 	carried.linear_velocity = velocity
 	carried.angular_velocity = ship.angular_velocity if ship != null else 0.0
 
-	if ship != null:
-		ship.remove_collision_exception_with(carried)
-
+	_set_passing(null)
 	_ignored[carried.get_instance_id()] = ignore_time
 	carried = null
 	_cooldown = cooldown_time

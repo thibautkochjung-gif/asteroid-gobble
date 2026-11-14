@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Ship/Modules/smelter_room.gd" id="1_script"]
+
+[node name="FlashSmelterRoom" type="Node2D"]
+script = ExtResource("1_script")
+room_type = 5
+melt_rate = 75.0
+refine_rate = 5.2
+heat_up_time = 0.5
+rock_trace_yield = 0.05
+hot_color = Color(1, 0.75, 0.3, 1)
+roller_color = Color(0.75, 0.7, 0.62, 1)

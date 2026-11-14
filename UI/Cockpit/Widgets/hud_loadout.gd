@@ -84,7 +84,7 @@ func _draw() -> void:
 
 # Bounds are measured once: the doors swing, and a diagram that rescales with them would wobble.
 func _fit_hull() -> void:
-	var polygons := _get_hull_polygons()
+	var polygons := get_hull_polygons(ship)
 
 	if polygons.is_empty():
 		return
@@ -104,21 +104,22 @@ func _to_view(local_point: Vector2) -> Vector2:
 	return _origin + (local_point - _bounds.position) * _scale
 
 
-func _get_hull_polygons() -> Array[PackedVector2Array]:
+# The hull in ship-local space, from its collision shapes. Static: the ship menu's schematic uses it too.
+static func get_hull_polygons(body: Node) -> Array[PackedVector2Array]:
 	var polygons: Array[PackedVector2Array] = []
 
-	for child in ship.get_children():
+	for child in body.get_children():
 		var collision := child as CollisionShape2D
 
 		if collision == null or collision.shape == null or collision.disabled:
 			continue
 
-		polygons.append(collision.transform * _get_shape_points(collision.shape))
+		polygons.append(collision.transform * get_shape_points(collision.shape))
 
 	return polygons
 
 
-func _get_shape_points(shape: Shape2D) -> PackedVector2Array:
+static func get_shape_points(shape: Shape2D) -> PackedVector2Array:
 	var convex := shape as ConvexPolygonShape2D
 
 	if convex != null:
@@ -132,7 +133,7 @@ func _get_shape_points(shape: Shape2D) -> PackedVector2Array:
 
 
 func _draw_hull() -> void:
-	for polygon in _get_hull_polygons():
+	for polygon in get_hull_polygons(ship):
 		var points := PackedVector2Array()
 
 		for point in polygon:
@@ -239,6 +240,9 @@ func _draw_hardpoints() -> void:
 		elif weapon.get_part_health().is_broken():
 			color = CockpitPalette.ALARM
 
+		if not hardpoints.is_slot_active(i):
+			color.a *= 0.4 # The other pair: LMB and RMB don't fire it right now
+
 		draw_line(at, Vector2(label_x - 4.0, at.y), Color(CockpitPalette.CREAM, 0.3), 1.0)
 		_draw_text(_font_or_default(font), text, Vector2(label_x, at.y + 5.0), font_size, color)
 
@@ -304,6 +308,7 @@ func _get_shown_state() -> Array:
 
 	state.append(soft_key_texts)
 	state.append(hard_key_texts)
+	state.append(hardpoints.active_pair if hardpoints != null else 0)
 	return state
 
 
